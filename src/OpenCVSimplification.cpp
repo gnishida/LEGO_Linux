@@ -16,9 +16,7 @@ namespace lego {
 		buildings.clear();
 
 		std::vector<Polygon> polygons = findContours(voxel_data[5]);
-		std::cout << polygons.size() << " contours are found." << std::endl;
 		for (int i = 0; i < polygons.size(); i++) {
-			std::cout << i << std::endl;
 			calculateBuilding(NULL, polygons[i], 5, buildings);
 		}
 	}
@@ -35,13 +33,11 @@ namespace lego {
 
 		// find the height at which the contour drastically changes
 		int next_height = findDrasticChange(height, polygon, layering_threshold);
-		std::cout << "next_height=" << next_height << std::endl;
 		
 		// calculate building by simplifying the contour and holes
 		try {
 			Building building = calculateBuildingComponent(parent, polygon, height, next_height);
 			buildings.push_back(building);
-			std::cout << "building is added" << std::endl;
 			
 			if (next_height >= voxel_data.size()) return;
 
@@ -55,7 +51,6 @@ namespace lego {
 
 			// extract contours
 			std::vector<Polygon> polygons = findContours(next_img);
-			std::cout << polygons.size() << " polygons are found." << std::endl;
 
 			for (int i = 0; i < polygons.size(); i++) {
 				// offset back the contour and holes
@@ -121,15 +116,12 @@ namespace lego {
 			}
 		}
 		
-		std::cout << "best_slice=" << best_slice << std::endl;
-		
 		// extract contours in the specified region
 		cv::Mat img = cv::Mat(voxel_data[best_slice], bbox).clone();
 		cv::Mat_<uchar> kernel = (cv::Mat_<uchar>(3, 3) << 1, 1, 0, 1, 1, 0, 0, 0, 0);
 		cv::Mat inflated;
 		cv::dilate(img, img, kernel);
 		std::vector<Polygon> polygons = findContours(img);
-		std::cout << polygons.size() << " polygons are found." << std::endl;
 		if (polygons.size() == 0) throw "No building is found.";
 		
 		// We should check which contour is the one to be processed,
