@@ -33,7 +33,7 @@ int main(int argc, const char* argv[]) {
 	lego::OpenCVSimplification sim(voxel_data, 1, 0.7, 1, 0.5);
 	sim.simplify(buildings);
 
-	lego::ply::write("buildings.ply", buildings);
+	//lego::ply::write("buildings.ply", buildings);
 	
 	std::cout << buildings.size() << " buildings are generated." << std::endl;
 
