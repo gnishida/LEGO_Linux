@@ -9,5 +9,5 @@ add_executable(LEGO_Linux
 	src/*.cpp
 )
 
-target_link_libraries(opencvtest ${OpenCV_LIBS})
+target_link_libraries(LEGO_Linux ${OpenCV_LIBS})
 
