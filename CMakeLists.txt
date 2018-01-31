@@ -16,5 +16,6 @@ add_executable(LEGO_Linux
 	src/OurCustomSimplification.cpp
 )
 
+qt5_use_modules(LEGO_Linux Core)
 target_link_libraries(LEGO_Linux ${OpenCV_LIBS})
 
