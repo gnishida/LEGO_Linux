@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(LEGO_Linux)
 set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+set (Qt5Core_DIR "~/Qt5.7.0/5.7/gcc_64/lib/cmake")
 
 find_package(OpenCV REQUIRED)
 find_package(Qt5Core REQUIRED)
