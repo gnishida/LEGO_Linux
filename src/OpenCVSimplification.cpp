@@ -54,6 +54,7 @@ namespace lego {
 
 			// extract contours
 			std::vector<Polygon> polygons = findContours(next_img);
+			std::cout << polygons.size() << " polygons are found." << std::endl;
 
 			for (int i = 0; i < polygons.size(); i++) {
 				// offset back the contour and holes
