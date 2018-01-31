@@ -116,6 +116,7 @@ namespace lego {
 					ans.push_back(polygon);
 				}
 			}
+			return ans;
 		}
 
 		void mark_domains(CDT& ct, CDT::Face_handle start, int index, std::list<CDT::Edge>& border) {
