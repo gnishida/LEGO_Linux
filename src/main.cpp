@@ -20,7 +20,8 @@ int main() {
 	for (int i = 0; i < files.size(); i++) {
 		voxel_data[i] = cv::imread((dir.absolutePath() + "/" + files[i]).toUtf8().constData(), cv::IMREAD_GRAYSCALE);
 	}
-
+	std::cout << "voxel data was loaded." << std::endl;
+	
 	std::vector<Building> buildings;
 
 	lego::OpenCVSimplification sim(voxel_data, 1, 0.7, 1, 0.5);
