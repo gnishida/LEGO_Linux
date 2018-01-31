@@ -129,6 +129,7 @@ namespace lego {
 		cv::Mat inflated;
 		cv::dilate(img, img, kernel);
 		std::vector<Polygon> polygons = findContours(img);
+		std::cout << polygons.size() << " polygons are found." << std::endl;
 		if (polygons.size() == 0) throw "No building is found.";
 		
 		// We should check which contour is the one to be processed,
