@@ -57,7 +57,7 @@ namespace lego {
 
 			std::ofstream out(filename);
 			out << "ply" << std::endl;
-			out << "format binary_little_endian 1.0" << std::endl;
+			out << "format ascii 1.0" << std::endl;
 			out << "element vertex " << vertices.size() << std::endl;
 			out << "property double x" << std::endl;
 			out << "property double y" << std::endl;
