@@ -88,7 +88,7 @@ namespace lego {
 				}
 			}
 		}
-		catch (char* ex) {
+		catch (const char* ex) {
 		}
 	}
 
