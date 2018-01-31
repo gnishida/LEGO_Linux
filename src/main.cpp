@@ -1,8 +1,11 @@
+#include <iostream>
 #include "OpenCVSimplification.h"
 #include <QDir>
 #include <QString>
 
 int main() {
+	std::cout << "started" << std::endl;
+
 	QString filename = "data/slice_001.png";
 	std::vector<cv::Mat> voxel_data;
 
