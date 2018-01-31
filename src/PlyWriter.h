@@ -46,6 +46,21 @@ namespace lego {
 		typedef CGAL::Random_points_in_square_2< Point_2, Creator > Point_generator;
 		typedef boost::shared_ptr<Polygon_2>						PolygonPtr;
 
+		class Point3d {
+		public:
+			double x;
+			double y;
+			double z;
+
+		public:
+			Point3d(double x, double y, double z) : x(x), y(y), z(z) {}
+			friend bool operator<(const Point3d& p1, const Point3d& p2) {
+				return std::tie(p1.x, p1.y, p1.z) < std::tie(p2.x, p2.y, p2.z);
+			}
+		};
+
+
+
 		void write(char* filename, const std::vector<Building>& buildings);
 		
 		std::vector<std::vector<cv::Point2f>> tessellate(const std::vector<cv::Point2f>& points, const std::vector<std::vector<cv::Point2f>>& holes);

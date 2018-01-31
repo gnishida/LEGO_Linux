@@ -6,26 +6,78 @@ namespace lego {
 	namespace ply {
 
 		void write(char* filename, const std::vector<Building>& buildings) {
-			std::ofstream out(filename);
-			out << "ply" << std::endl;
-			out << "format binary_little_endian 1.0" << std::endl;
-			out << "element vertex 0" << std::endl;
-			out << "property double x" << std::endl;
-			out << "property double y" << std::endl;
-			out << "property double z" << std::endl;
-			out << "element face 0" << std::endl;
-			out << "property list uchar int vertex_indices" << std::endl;
-			out << "end_header" << std::endl;
-
-			std::vector<cv::Point3f> points;
+			std::map<Point3d, int> vertices_map;
+			std::vector<Point3d> vertices;
 			std::vector<std::vector<int>> faces;
 			for (int i = 0; i < buildings.size(); i++) {
 				if (buildings[i].holes.size() == 0) {
+					std::vector<int> bottom_face;
+					std::vector<int> top_face;
+										
+					for (int j = 0; j < buildings[i].footprint.size(); j++) {
+						Point3d pt_bottom(buildings[i].footprint[j].x, buildings[i].footprint[j].y, buildings[i].bottom_height);
+						Point3d pt_top(buildings[i].footprint[j].x, buildings[i].footprint[j].y, buildings[i].top_height);
 
+						int index_bottom;
+						if (vertices_map.find(pt_bottom) == vertices_map.end()) {
+							index_bottom = vertices.size();
+							vertices.push_back(pt_bottom);
+							vertices_map[pt_bottom] = index_bottom;
+						}
+						else {
+							index_bottom = vertices_map[pt_bottom];
+						}
+						bottom_face.push_back(index_bottom);
+
+						int index_top;
+						if (vertices_map.find(pt_top) == vertices_map.end()) {
+							index_top = vertices.size();
+							vertices.push_back(pt_top);
+							vertices_map[pt_top] = index_top;
+						}
+						else {
+							index_top = vertices_map[pt_top];
+						}
+						top_face.push_back(index_top);
+					}
+
+					faces.push_back(bottom_face);
+					faces.push_back(top_face);
+
+					// side face
+					for (int i = 0; i < bottom_face.size(); i++) {
+						int next = (i + 1) % bottom_face.size();
+						faces.push_back({ bottom_face[i], bottom_face[next], top_face[next], top_face[i] });
+					}
 				}
 				else {
-
+					std::vector<std::vector<cv::Point2f>> polygons = tessellate(buildings[i].footprint, buildings[i].holes);
 				}
+			}
+
+			std::ofstream out(filename);
+			out << "ply" << std::endl;
+			out << "format binary_little_endian 1.0" << std::endl;
+			out << "element vertex " << vertices.size() << std::endl;
+			out << "property double x" << std::endl;
+			out << "property double y" << std::endl;
+			out << "property double z" << std::endl;
+			out << "element face " << faces.size() << std::endl;
+			out << "property list uchar int vertex_indices" << std::endl;
+			out << "end_header" << std::endl;
+			
+			// write vertices
+			for (int i = 0; i < vertices.size(); i++) {
+				out << vertices[i].x << " " << vertices[i].y << " " << vertices[i].z << std::endl;
+			}
+
+			// write faces
+			for (int i = 0; i < faces.size(); i++) {
+				out << faces[i].size();
+				for (int j = 0; j < faces[i].size(); j++) {
+					out << " " << faces[i][j];
+				}
+				out << std::endl;
 			}
 
 			out.close();
