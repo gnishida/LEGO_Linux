@@ -6,8 +6,14 @@ set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-file(GLOB_RECURSE source_list "*.cpp" "*.h")
-add_executable(LEGO_Linux ${source_list})
+#file(GLOB_RECURSE source_list "*.cpp")
+add_executable(LEGO_Linux
+	src/Building.cpp
+	src/ContourUtils.cpp
+	src/main.cpp
+	src/OpenCVSimplification.cpp
+	src/OurCustomSimplification.cpp
+)
 
 target_link_libraries(LEGO_Linux ${OpenCV_LIBS})
 
