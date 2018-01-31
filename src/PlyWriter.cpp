@@ -51,7 +51,7 @@ namespace lego {
 					}
 				}
 				else {
-					//std::vector<std::vector<cv::Point2f>> polygons = tessellate(buildings[i].footprint, buildings[i].holes);
+					std::vector<std::vector<cv::Point2f>> polygons = tessellate(buildings[i].footprint, buildings[i].holes);
 				}
 			}
 
@@ -100,9 +100,11 @@ namespace lego {
 				}
 				cdt.insert_constraint(polygon.vertices_begin(), polygon.vertices_end(), true);
 			}
+			std::cout << "cdt done." << std::endl;
 
 			//Mark facets that are inside the domain bounded by the polygon
 			mark_domains(cdt);
+			std::cout << "mark domains done." << std::endl;
 
 			for (CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
 				if (fit->info().in_domain()) {
