@@ -2,7 +2,7 @@
 #include "OpenCVSimplification.h"
 #include <QDir>
 #include <QString>
-#include "PlyWriter.h"
+//#include "PlyWriter.h"
 
 int main() {
 	QString filename = "data/slice_001.png";
@@ -23,7 +23,7 @@ int main() {
 	lego::OpenCVSimplification sim(voxel_data, 1, 0.7, 1, 0.5);
 	sim.simplify(buildings);
 
-	lego::ply::write("buildings.ply", buildings);
+	//lego::ply::write("buildings.ply", buildings);
 	
 	std::cout << buildings.size() << " buildings are generated." << std::endl;
 
