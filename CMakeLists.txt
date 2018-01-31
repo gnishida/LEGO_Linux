@@ -9,7 +9,7 @@ find_package(Qt5Core)
 #find_package(CGAL REQUIRED COMPONENTS Core)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
-include(${CGAL_USE_FILE})
+#include(${CGAL_USE_FILE})
 
 #file(GLOB_RECURSE source_list "*.cpp")
 add_executable(LEGO_Linux
