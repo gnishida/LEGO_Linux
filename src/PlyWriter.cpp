@@ -51,7 +51,7 @@ namespace lego {
 					}
 				}
 				else {
-					std::vector<std::vector<cv::Point2f>> polygons = tessellate(buildings[i].footprint, buildings[i].holes);
+					//std::vector<std::vector<cv::Point2f>> polygons = tessellate(buildings[i].footprint, buildings[i].holes);
 				}
 			}
 
