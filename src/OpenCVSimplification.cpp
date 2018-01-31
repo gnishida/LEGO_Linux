@@ -121,6 +121,8 @@ namespace lego {
 			}
 		}
 		
+		std::cout << "best_slice=" << best_slice << std::endl;
+		
 		// extract contours in the specified region
 		cv::Mat img = cv::Mat(voxel_data[best_slice], bbox).clone();
 		cv::Mat_<uchar> kernel = (cv::Mat_<uchar>(3, 3) << 1, 1, 0, 1, 1, 0, 0, 0, 0);
