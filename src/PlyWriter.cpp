@@ -5,7 +5,7 @@ namespace lego {
 	
 	namespace ply {
 
-		void write(char* filename, const std::vector<Building>& buildings) {
+		void write(const char* filename, const std::vector<Building>& buildings) {
 			std::map<Point3d, int> vertices_map;
 			std::vector<Point3d> vertices;
 			std::vector<std::vector<int>> faces;

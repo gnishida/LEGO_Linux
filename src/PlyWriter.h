@@ -61,7 +61,7 @@ namespace lego {
 
 
 
-		void write(char* filename, const std::vector<Building>& buildings);
+		void write(const char* filename, const std::vector<Building>& buildings);
 		
 		std::vector<std::vector<cv::Point2f>> tessellate(const std::vector<cv::Point2f>& points, const std::vector<std::vector<cv::Point2f>>& holes);
 		void mark_domains(CDT& ct, CDT::Face_handle start, int index, std::list<CDT::Edge>& border);
