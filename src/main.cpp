@@ -11,9 +11,11 @@ int main() {
 
 	// get directory
 	QDir dir = QFileInfo(filename).absoluteDir();
-
+	std::cout << dir.dirName().toUtf8().constData() << std::endl;
+	
 	// scan all the files in the directory to get a voxel data
 	QStringList files = dir.entryList(QDir::NoDotAndDotDot | QDir::Files, QDir::DirsFirst);
+	std::cout << files.size() << " files found." << std::endl;
 	voxel_data.resize(files.size());
 	for (int i = 0; i < files.size(); i++) {
 		voxel_data[i] = cv::imread((dir.absolutePath() + "/" + files[i]).toUtf8().constData(), cv::IMREAD_GRAYSCALE);
