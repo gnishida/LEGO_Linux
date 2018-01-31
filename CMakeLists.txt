@@ -17,6 +17,7 @@ add_executable(LEGO_Linux
 	src/main.cpp
 	src/OpenCVSimplification.cpp
 	src/OurCustomSimplification.cpp
+	src/PlyWriter.cpp
 )
 
 qt5_use_modules(LEGO_Linux Core)
