@@ -4,8 +4,13 @@
 #include <QString>
 //#include "PlyWriter.h"
 
-int main() {
-	QString filename = "data/slice_001.png";
+int main(int argc, const char* argv[]) {
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0] << " <slice filename>" << std::endl;
+		return -1;
+	}
+
+	QString filename(argv[1]);
 	std::vector<cv::Mat> voxel_data;
 
 	// get directory
