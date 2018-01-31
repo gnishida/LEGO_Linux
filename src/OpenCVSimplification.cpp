@@ -35,6 +35,7 @@ namespace lego {
 
 		// find the height at which the contour drastically changes
 		int next_height = findDrasticChange(height, polygon, layering_threshold);
+		std::cout << "next_height=" << next_height << std::endl;
 		
 		// calculate building by simplifying the contour and holes
 		try {
