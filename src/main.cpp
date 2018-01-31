@@ -1,13 +1,15 @@
 #include "OpenCVSimplification.h"
+#include <QDir>
+#include <QString>
 
 int main() {
-	std::string filename = "data/slice_001.png";
+	QString filename = "data/slice_001.png";
 	std::vector<cv::Mat> voxel_data;
 
-	/*
 	// get directory
 	QDir dir = QFileInfo(filename).absoluteDir();
 
+	/*
 	// scan all the files in the directory to get a voxel data
 	QStringList files = dir.entryList(QDir::NoDotAndDotDot | QDir::Files, QDir::DirsFirst);
 	voxel_data.resize(files.size());

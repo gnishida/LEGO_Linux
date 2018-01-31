@@ -4,6 +4,7 @@ project(LEGO_Linux)
 set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
 find_package(OpenCV REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui OpenGL Widgets REQURIED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 #file(GLOB_RECURSE source_list "*.cpp")
