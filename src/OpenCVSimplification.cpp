@@ -41,16 +41,8 @@ namespace lego {
 			
 			if (next_height >= voxel_data.size()) return;
 
-			// crop the image of the next height
-			cv::Mat next_img = cv::Mat(voxel_data[next_height], bbox).clone();
-
-			// dilate the image
-			cv::Mat_<uchar> kernel = (cv::Mat_<uchar>(3, 3) << 1, 1, 0, 1, 1, 0, 0, 0, 0);
-			cv::Mat inflated;
-			cv::dilate(next_img, next_img, kernel);
-
 			// extract contours
-			std::vector<Polygon> polygons = findContours(next_img);
+			std::vector<Polygon> polygons = findContours(cv::Mat(voxel_data[next_height], bbox));
 
 			for (int i = 0; i < polygons.size(); i++) {
 				// offset back the contour and holes
@@ -117,11 +109,7 @@ namespace lego {
 		}
 		
 		// extract contours in the specified region
-		cv::Mat img = cv::Mat(voxel_data[best_slice], bbox).clone();
-		cv::Mat_<uchar> kernel = (cv::Mat_<uchar>(3, 3) << 1, 1, 0, 1, 1, 0, 0, 0, 0);
-		cv::Mat inflated;
-		cv::dilate(img, img, kernel);
-		std::vector<Polygon> polygons = findContours(img);
+		std::vector<Polygon> polygons = findContours(cv::Mat(voxel_data[best_slice], bbox));
 		if (polygons.size() == 0) throw "No building is found.";
 		
 		// We should check which contour is the one to be processed,

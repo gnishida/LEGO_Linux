@@ -107,10 +107,16 @@ namespace lego {
 	std::vector<Polygon> findContours(const cv::Mat& img) {
 		std::vector<Polygon> ans;
 
+		// dilate the image
+		cv::Mat_<uchar> kernel = (cv::Mat_<uchar>(3, 3) << 1, 1, 0, 1, 1, 0, 0, 0, 0);
+		cv::Mat inflated_img = img.clone();
+		cv::dilate(inflated_img, inflated_img, kernel);
+
+
 		// extract contours
 		std::vector<std::vector<cv::Point>> contours;
 		std::vector<cv::Vec4i> hierarchy;
-		cv::findContours(img.clone(), contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+		cv::findContours(inflated_img, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
 		for (int i = 0; i < hierarchy.size(); i++) {
 			if (hierarchy[i][3] != -1) continue;
