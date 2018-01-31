@@ -14,7 +14,12 @@ int main(int argc, const char* argv[]) {
 	std::vector<cv::Mat> voxel_data;
 
 	// get directory
-	QDir dir = QFileInfo(filename).absoluteDir();
+	QFileInfo finfo(filename);
+	if (!finfo.exists()) {
+		std::cerr << "File" << argv[0] << was not found." << std::endl;
+		return -1;
+	}
+	QDir dir = finfo.absoluteDir();
 	
 	// scan all the files in the directory to get a voxel data
 	QStringList files = dir.entryList(QDir::NoDotAndDotDot | QDir::Files, QDir::DirsFirst);
