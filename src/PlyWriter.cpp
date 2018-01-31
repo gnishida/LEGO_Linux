@@ -9,6 +9,7 @@ namespace lego {
 			std::map<Point3d, int> vertices_map;
 			std::vector<Point3d> vertices;
 			std::vector<std::vector<int>> faces;
+
 			for (int i = 0; i < buildings.size(); i++) {
 				if (buildings[i].holes.size() == 0) {
 					std::vector<int> bottom_face;
@@ -44,14 +45,73 @@ namespace lego {
 					faces.push_back(bottom_face);
 					faces.push_back(top_face);
 
-					// side face
-					for (int i = 0; i < bottom_face.size(); i++) {
-						int next = (i + 1) % bottom_face.size();
-						faces.push_back({ bottom_face[i], bottom_face[next], top_face[next], top_face[i] });
+					// side faces
+					for (int j = 0; j < bottom_face.size(); j++) {
+						int next = (j + 1) % bottom_face.size();
+						faces.push_back({ bottom_face[j], bottom_face[next], top_face[next], top_face[j] });
 					}
 				}
 				else {
 					std::vector<std::vector<cv::Point2f>> polygons = tessellate(buildings[i].footprint, buildings[i].holes);
+
+					for (int j = 0; j < polygons.size(); j++) {
+						std::vector<int> bottom_face;
+						std::vector<int> top_face;
+
+						for (int k = 0; k < polygons[j].size(); k++) {
+							Point3d pt_bottom(polygons[j][k].x, polygons[j][k].y, buildings[i].bottom_height);
+							Point3d pt_top(polygons[j][k].x, polygons[j][k].y, buildings[i].top_height);
+
+							int index_bottom;
+							if (vertices_map.find(pt_bottom) == vertices_map.end()) {
+								index_bottom = vertices.size();
+								vertices.push_back(pt_bottom);
+								vertices_map[pt_bottom] = index_bottom;
+							}
+							else {
+								index_bottom = vertices_map[pt_bottom];
+							}
+							bottom_face.push_back(index_bottom);
+
+							int index_top;
+							if (vertices_map.find(pt_top) == vertices_map.end()) {
+								index_top = vertices.size();
+								vertices.push_back(pt_top);
+								vertices_map[pt_top] = index_top;
+							}
+							else {
+								index_top = vertices_map[pt_top];
+							}
+							top_face.push_back(index_top);
+						}
+
+						faces.push_back(bottom_face);
+						faces.push_back(top_face);
+					}
+
+					// side faces
+					for (int j = 0; j < buildings[i].footprint.size(); j++) {
+						int next = (j + 1) % buildings[i].footprint.size();
+						Point3d p1(buildings[i].footprint[j].x, buildings[i].footprint[j].y, buildings[i].bottom_height);
+						Point3d p2(buildings[i].footprint[next].x, buildings[i].footprint[next].y, buildings[i].bottom_height);
+						Point3d p3(buildings[i].footprint[next].x, buildings[i].footprint[next].y, buildings[i].top_height);
+						Point3d p4(buildings[i].footprint[j].x, buildings[i].footprint[j].y, buildings[i].top_height);
+
+						faces.push_back({ vertices_map[p1], vertices_map[p2], vertices_map[p3], vertices_map[p4] });
+					}
+
+					// side faces of holes
+					for (int j = 0; j < buildings[i].holes.size(); j++) {
+						for (int k = 0; k < buildings[i].holes[j].size(); k++) {
+							int next = (k + 1) % buildings[i].holes[j].size();
+							Point3d p1(buildings[i].holes[j][k].x, buildings[i].holes[j][k].y, buildings[i].bottom_height);
+							Point3d p2(buildings[i].holes[j][next].x, buildings[i].holes[j][next].y, buildings[i].bottom_height);
+							Point3d p3(buildings[i].holes[j][next].x, buildings[i].holes[j][next].y, buildings[i].top_height);
+							Point3d p4(buildings[i].holes[j][k].x, buildings[i].holes[j][k].y, buildings[i].top_height);
+
+							faces.push_back({ vertices_map[p1], vertices_map[p2], vertices_map[p3], vertices_map[p4] });
+						}
+					}
 				}
 			}
 
@@ -89,8 +149,8 @@ namespace lego {
 			//Insert the polygons into a constrained triangulation
 			CDT cdt;
 			Polygon_2 polygon;
-			for (int j = 0; j < points.size(); j++) {
-				polygon.push_back(Point(points[j].x, points[j].y));
+			for (int i = 0; i < points.size(); i++) {
+				polygon.push_back(Point(points[i].x, points[i].y));
 			}
 			cdt.insert_constraint(polygon.vertices_begin(), polygon.vertices_end(), true);
 			for (int i = 0; i < holes.size(); i++) {
@@ -100,11 +160,9 @@ namespace lego {
 				}
 				cdt.insert_constraint(polygon.vertices_begin(), polygon.vertices_end(), true);
 			}
-			std::cout << "cdt done." << std::endl;
 
 			//Mark facets that are inside the domain bounded by the polygon
 			mark_domains(cdt);
-			std::cout << "mark domains done." << std::endl;
 
 			for (CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
 				if (fit->info().in_domain()) {
