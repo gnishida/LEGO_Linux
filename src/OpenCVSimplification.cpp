@@ -16,7 +16,9 @@ namespace lego {
 		buildings.clear();
 
 		std::vector<Polygon> polygons = findContours(voxel_data[5]);
+		std::cout << polygons.size() << " contours are found." << std::endl;
 		for (int i = 0; i < polygons.size(); i++) {
+			std::cout << i << std::endl;
 			calculateBuilding(NULL, polygons[i], 5, buildings);
 		}
 	}
