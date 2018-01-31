@@ -16,7 +16,7 @@ int main(int argc, const char* argv[]) {
 	// get directory
 	QFileInfo finfo(filename);
 	if (!finfo.exists()) {
-		std::cerr << "File" << argv[0] << "was not found." << std::endl;
+		std::cerr << "File " << argv[0] << " was not found." << std::endl;
 		return -1;
 	}
 	QDir dir = finfo.absoluteDir();
