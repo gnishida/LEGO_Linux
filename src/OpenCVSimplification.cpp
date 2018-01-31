@@ -41,7 +41,8 @@ namespace lego {
 		try {
 			Building building = calculateBuildingComponent(parent, polygon, height, next_height);
 			buildings.push_back(building);
-
+			std::cout << "building is added" << std::endl;
+			
 			if (next_height >= voxel_data.size()) return;
 
 			// crop the image of the next height
