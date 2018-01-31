@@ -7,8 +7,6 @@ find_package(OpenCV REQUIRED)
 find_package(Qt5Core)
 find_package(CGAL REQUIRED COMPONENTS Core)
 
-qt5_use_modules(LEGO_Linux Core)
-
 include_directories(${OpenCV_INCLUDE_DIRS})
 include(${CGAL_USE_FILE})
 
@@ -22,5 +20,7 @@ add_executable(LEGO_Linux
 	src/PlyWriter.cpp
 )
 
-target_link_libraries(LEGO_Linux ${OpenCV_LIBS})
+#qt5_use_modules(LEGO_Linux Core)
+
+target_link_libraries(LEGO_Linux ${OpenCV_LIBS} Qt5::Core)
 
