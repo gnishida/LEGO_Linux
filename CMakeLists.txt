@@ -5,7 +5,10 @@ set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
 find_package(OpenCV REQUIRED)
 find_package(Qt5Core)
+find_package(CGAL REQURIED COMPONENTS Core)
+
 include_directories(${OpenCV_INCLUDE_DIRS})
+include(${CGAL_USE_FILE})
 
 #file(GLOB_RECURSE source_list "*.cpp")
 add_executable(LEGO_Linux

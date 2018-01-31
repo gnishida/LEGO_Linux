@@ -2,6 +2,7 @@
 #include "OpenCVSimplification.h"
 #include <QDir>
 #include <QString>
+#include <CGAL/Simple_cartesian.h>
 
 int main() {
 	QString filename = "data/slice_001.png";
