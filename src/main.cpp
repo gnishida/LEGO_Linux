@@ -20,6 +20,8 @@ int main() {
 
 	lego::OpenCVSimplification sim(voxel_data, 1, 0.7, 1, 0.5);
 	sim.simplify(buildings);
+	
+	std::cout << buildings.size() << " buildings are generated." << std::endl;
 
 	return 0;
 }
