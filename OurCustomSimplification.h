@@ -5,7 +5,7 @@
 #include "Building.h"
 #include "ContourUtils.h"
 
-namespace lego {
+namespace simp {
 
 	class OurCustomSimplification {
 	private:
@@ -18,9 +18,9 @@ namespace lego {
 		OurCustomSimplification(const std::vector<cv::Mat>& voxel_data, int resolution, double layering_threshold);
 
 		void simplify(std::vector<Building>& buildings);
-		void calculateBuilding(const Polygon& polygon, int height, double angle, int dx, int dy, std::vector<Building>& buildings);
-		Building calculateBuildingComponent(const Polygon& polygon, int bottom_height, int top_height, double& angle, int& dx, int& dy);
-		int findDrasticChange(int height, const Polygon& polygon, double threshold);
+		void calculateBuilding(const util::Polygon& polygon, int height, double angle, int dx, int dy, std::vector<Building>& buildings);
+		Building calculateBuildingComponent(const util::Polygon& polygon, int bottom_height, int top_height, double& angle, int& dx, int& dy);
+		int findDrasticChange(int height, const util::Polygon& polygon, double threshold);
 
 		std::tuple<double, int, int> simplify(const std::vector<cv::Point>& contour, std::vector<cv::Point2f>& result, double resolution = 5.0);
 		double simplify(const std::vector<cv::Point>& contour, std::vector<cv::Point2f>& result, double resolution, double angle, int dx, int dy);

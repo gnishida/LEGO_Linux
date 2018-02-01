@@ -7,7 +7,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-namespace lego {
+namespace util {
 
 	class Polygon {
 	public:
@@ -35,4 +35,5 @@ namespace lego {
 	float dotProduct(const cv::Point2f& v1, const cv::Point2f& v2);
 	float crossProduct(const cv::Point2f& v1, const cv::Point2f& v2);
 	float closestPoint(const cv::Point2f& a, const cv::Point2f& b, const cv::Point2f& c, bool segmentOnly, cv::Point2f& pt);
+
 }

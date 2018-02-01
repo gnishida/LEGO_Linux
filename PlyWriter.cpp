@@ -1,118 +1,17 @@
 #include "PlyWriter.h"
 #include <fstream>
 
-namespace lego {
+namespace util {
 	
 	namespace ply {
 
-		void write(const char* filename, const std::vector<Building>& buildings) {
+		void PlyWriter::write(const char* filename, const std::vector<simp::Building>& buildings) {
 			std::map<Point3d, int> vertices_map;
 			std::vector<Point3d> vertices;
 			std::vector<std::vector<int>> faces;
 
 			for (int i = 0; i < buildings.size(); i++) {
-				if (buildings[i].holes.size() == 0) {
-					std::vector<int> bottom_face;
-					std::vector<int> top_face;
-										
-					for (int j = 0; j < buildings[i].footprint.size(); j++) {
-						Point3d pt_bottom(buildings[i].footprint[j].x, buildings[i].footprint[j].y, buildings[i].bottom_height);
-						Point3d pt_top(buildings[i].footprint[j].x, buildings[i].footprint[j].y, buildings[i].top_height);
-
-						int index_bottom;
-						if (vertices_map.find(pt_bottom) == vertices_map.end()) {
-							index_bottom = vertices.size();
-							vertices.push_back(pt_bottom);
-							vertices_map[pt_bottom] = index_bottom;
-						}
-						else {
-							index_bottom = vertices_map[pt_bottom];
-						}
-						bottom_face.push_back(index_bottom);
-
-						int index_top;
-						if (vertices_map.find(pt_top) == vertices_map.end()) {
-							index_top = vertices.size();
-							vertices.push_back(pt_top);
-							vertices_map[pt_top] = index_top;
-						}
-						else {
-							index_top = vertices_map[pt_top];
-						}
-						top_face.push_back(index_top);
-					}
-
-					faces.push_back(bottom_face);
-					faces.push_back(top_face);
-
-					// side faces
-					for (int j = 0; j < bottom_face.size(); j++) {
-						int next = (j + 1) % bottom_face.size();
-						faces.push_back({ bottom_face[j], bottom_face[next], top_face[next], top_face[j] });
-					}
-				}
-				else {
-					std::vector<std::vector<cv::Point2f>> polygons = tessellate(buildings[i].footprint, buildings[i].holes);
-
-					for (int j = 0; j < polygons.size(); j++) {
-						std::vector<int> bottom_face;
-						std::vector<int> top_face;
-
-						for (int k = 0; k < polygons[j].size(); k++) {
-							Point3d pt_bottom(polygons[j][k].x, polygons[j][k].y, buildings[i].bottom_height);
-							Point3d pt_top(polygons[j][k].x, polygons[j][k].y, buildings[i].top_height);
-
-							int index_bottom;
-							if (vertices_map.find(pt_bottom) == vertices_map.end()) {
-								index_bottom = vertices.size();
-								vertices.push_back(pt_bottom);
-								vertices_map[pt_bottom] = index_bottom;
-							}
-							else {
-								index_bottom = vertices_map[pt_bottom];
-							}
-							bottom_face.push_back(index_bottom);
-
-							int index_top;
-							if (vertices_map.find(pt_top) == vertices_map.end()) {
-								index_top = vertices.size();
-								vertices.push_back(pt_top);
-								vertices_map[pt_top] = index_top;
-							}
-							else {
-								index_top = vertices_map[pt_top];
-							}
-							top_face.push_back(index_top);
-						}
-
-						faces.push_back(bottom_face);
-						faces.push_back(top_face);
-					}
-
-					// side faces
-					for (int j = 0; j < buildings[i].footprint.size(); j++) {
-						int next = (j + 1) % buildings[i].footprint.size();
-						Point3d p1(buildings[i].footprint[j].x, buildings[i].footprint[j].y, buildings[i].bottom_height);
-						Point3d p2(buildings[i].footprint[next].x, buildings[i].footprint[next].y, buildings[i].bottom_height);
-						Point3d p3(buildings[i].footprint[next].x, buildings[i].footprint[next].y, buildings[i].top_height);
-						Point3d p4(buildings[i].footprint[j].x, buildings[i].footprint[j].y, buildings[i].top_height);
-
-						faces.push_back({ vertices_map[p1], vertices_map[p2], vertices_map[p3], vertices_map[p4] });
-					}
-
-					// side faces of holes
-					for (int j = 0; j < buildings[i].holes.size(); j++) {
-						for (int k = 0; k < buildings[i].holes[j].size(); k++) {
-							int next = (k + 1) % buildings[i].holes[j].size();
-							Point3d p1(buildings[i].holes[j][k].x, buildings[i].holes[j][k].y, buildings[i].bottom_height);
-							Point3d p2(buildings[i].holes[j][next].x, buildings[i].holes[j][next].y, buildings[i].bottom_height);
-							Point3d p3(buildings[i].holes[j][next].x, buildings[i].holes[j][next].y, buildings[i].top_height);
-							Point3d p4(buildings[i].holes[j][k].x, buildings[i].holes[j][k].y, buildings[i].top_height);
-
-							faces.push_back({ vertices_map[p1], vertices_map[p2], vertices_map[p3], vertices_map[p4] });
-						}
-					}
-				}
+				writeBuilding(buildings[i], vertices_map, vertices, faces);
 			}
 
 			std::ofstream out(filename);
@@ -143,7 +42,106 @@ namespace lego {
 			out.close();
 		}
 
-		std::vector<std::vector<cv::Point2f>> tessellate(const std::vector<cv::Point2f>& points, const std::vector<std::vector<cv::Point2f>>& holes) {
+		void PlyWriter::writeBuilding(const simp::Building& building, std::map<Point3d, int>& vertices_map, std::vector<Point3d>& vertices, std::vector<std::vector<int>>& faces) {
+			std::vector<std::vector<cv::Point2f>> polygons;
+
+			if (building.holes.size() == 0) {
+				polygons = tessellate(building.footprint);
+			}
+			else {
+				polygons = tessellate(building.footprint, building.holes);
+			}
+
+			for (auto polygon : polygons) {
+				std::vector<int> bottom_face;
+				std::vector<int> top_face;
+
+				for (int i = 0; i < polygon.size(); i++) {
+					Point3d pt_bottom(polygon[i].x, polygon[i].y, building.bottom_height);
+					Point3d pt_top(polygon[i].x, polygon[i].y, building.top_height);
+
+					int index_bottom;
+					if (vertices_map.find(pt_bottom) == vertices_map.end()) {
+						index_bottom = vertices.size();
+						vertices.push_back(pt_bottom);
+						vertices_map[pt_bottom] = index_bottom;
+					}
+					else {
+						index_bottom = vertices_map[pt_bottom];
+					}
+					bottom_face.push_back(index_bottom);
+
+					int index_top;
+					if (vertices_map.find(pt_top) == vertices_map.end()) {
+						index_top = vertices.size();
+						vertices.push_back(pt_top);
+						vertices_map[pt_top] = index_top;
+					}
+					else {
+						index_top = vertices_map[pt_top];
+					}
+					top_face.push_back(index_top);
+				}
+
+				faces.push_back(bottom_face);
+				faces.push_back(top_face);
+			}
+
+			// side faces
+			for (int i = 0; i < building.footprint.size(); i++) {
+				int next = (i + 1) % building.footprint.size();
+				Point3d p1(building.footprint[i].x, building.footprint[i].y, building.bottom_height);
+				Point3d p2(building.footprint[next].x, building.footprint[next].y, building.bottom_height);
+				Point3d p3(building.footprint[next].x, building.footprint[next].y, building.top_height);
+				Point3d p4(building.footprint[i].x, building.footprint[i].y, building.top_height);
+
+				faces.push_back({ vertices_map[p1], vertices_map[p2], vertices_map[p3], vertices_map[p4] });
+			}
+
+			// side faces of holes
+			for (auto hole : building.holes) {
+				for (int i = 0; i < hole.size(); i++) {
+					int next = (i + 1) % hole.size();
+					Point3d p1(hole[i].x, hole[i].y, building.bottom_height);
+					Point3d p2(hole[next].x, hole[next].y, building.bottom_height);
+					Point3d p3(hole[next].x, hole[next].y, building.top_height);
+					Point3d p4(hole[i].x, hole[i].y, building.top_height);
+
+					faces.push_back({ vertices_map[p1], vertices_map[p2], vertices_map[p3], vertices_map[p4] });
+				}
+			}
+		}
+
+		std::vector<std::vector<cv::Point2f>> PlyWriter::tessellate(const std::vector<cv::Point2f>& points) {
+			std::vector<std::vector<cv::Point2f>> ans;
+
+			Polygon_2 polygon;
+			for (int i = 0; i < points.size(); ++i) {
+				polygon.push_back(Point_2(points[i].x, points[i].y));
+			}
+
+			if (polygon.is_clockwise_oriented()) {
+				polygon.reverse_orientation();
+			}
+
+			// tesselate the concave polygon
+			Polygon_list partition_polys;
+			Traits       partition_traits;
+			CGAL::greene_approx_convex_partition_2(polygon.vertices_begin(), polygon.vertices_end(), std::back_inserter(partition_polys), partition_traits);
+
+			for (auto fit = partition_polys.begin(); fit != partition_polys.end(); ++fit) {
+				std::vector<cv::Point2f> pol;
+				for (auto vit = fit->vertices_begin(); vit != fit->vertices_end(); ++vit) {
+					pol.push_back(cv::Point2f(vit->x(), vit->y()));
+				}
+
+				ans.push_back(pol);
+			}
+
+			return ans;
+		}
+
+		std::vector<std::vector<cv::Point2f>> PlyWriter::tessellate(const std::vector<cv::Point2f>& points, const std::vector<std::vector<cv::Point2f>>& holes) {
 			std::vector<std::vector<cv::Point2f>> ans;
 
 			//Insert the polygons into a constrained triangulation
@@ -166,18 +164,19 @@ namespace lego {
 
 			for (CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
 				if (fit->info().in_domain()) {
-					std::vector<cv::Point2f> polygon;
+					std::vector<cv::Point2f> pol;
 					for (int i = 0; i < 3; i++) {
 						CDT::Vertex_handle vh = fit->vertex(i);
-						polygon.push_back(cv::Point2f(vh->point().x(), vh->point().y()));
+						pol.push_back(cv::Point2f(vh->point().x(), vh->point().y()));
 					}
-					ans.push_back(polygon);
+
+					ans.push_back(pol);
 				}
 			}
 			return ans;
 		}
 
-		void mark_domains(CDT& ct, CDT::Face_handle start, int index, std::list<CDT::Edge>& border) {
+		void PlyWriter::mark_domains(CDT& ct, CDT::Face_handle start, int index, std::list<CDT::Edge>& border) {
 			if (start->info().nesting_level != -1){
 				return;
 			}
@@ -210,7 +209,7 @@ namespace lego {
 		//level of 0. Then we recursively consider the non-explored facets incident 
 		//to constrained edges bounding the former set and increase the nesting level by 1.
 		//Facets in the domain are those with an odd nesting level.
-		void mark_domains(CDT& cdt) {
+		void PlyWriter::mark_domains(CDT& cdt) {
 			for (CDT::All_faces_iterator it = cdt.all_faces_begin(); it != cdt.all_faces_end(); ++it){
 				it->info().nesting_level = -1;
 			}

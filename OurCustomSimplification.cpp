@@ -1,7 +1,7 @@
 #include "OurCustomSimplification.h"
 #include "ContourUtils.h"
 
-namespace lego {
+namespace simp {
 
 	OurCustomSimplification::OurCustomSimplification(const std::vector<cv::Mat>& voxel_data, int resolution, double layering_threshold) {
 		this->voxel_data = voxel_data;
@@ -11,7 +11,7 @@ namespace lego {
 	}
 
 	void OurCustomSimplification::simplify(std::vector<Building>& buildings) {
-		std::vector<Polygon> polygons = findContours(voxel_data[5]);
+		std::vector<util::Polygon> polygons = util::findContours(voxel_data[5]);
 		for (int i = 0; i < polygons.size(); i++) {
 			calculateBuilding(polygons[i], 5, -1, -1, -1, buildings);
 		}
@@ -19,9 +19,9 @@ namespace lego {
 		std::cout << "Processing buildings has been finished." << std::endl;
 	}
 
-	void OurCustomSimplification::calculateBuilding(const Polygon& polygon, int height, double angle, int dx, int dy, std::vector<Building>& buildings) {
+	void OurCustomSimplification::calculateBuilding(const util::Polygon& polygon, int height, double angle, int dx, int dy, std::vector<Building>& buildings) {
 		// calculate the bounding box
-		cv::Rect bbox = boundingBox(polygon.contour);
+		cv::Rect bbox = util::boundingBox(polygon.contour);
 
 		// have 1px as margin
 		bbox.x = std::max(0, bbox.x - 1);
@@ -92,7 +92,7 @@ namespace lego {
 	/**
 	* Calculate the building geometry by simplifying the specified footprint and holes using OpenCV function.
 	*/
-	Building OurCustomSimplification::calculateBuildingComponent(const Polygon& polygon, int bottom_height, int top_height, double& angle, int& dx, int& dy) {
+	Building OurCustomSimplification::calculateBuildingComponent(const util::Polygon& polygon, int bottom_height, int top_height, double& angle, int& dx, int& dy) {
 		std::vector<cv::Point2f> simplified_contour;
 		if (angle == -1) {
 			std::tuple<double, int, int> best_mat = simplify(polygon.contour, simplified_contour, resolution);
@@ -133,9 +133,9 @@ namespace lego {
 		return building;
 	}
 
-	int OurCustomSimplification::findDrasticChange(int height, const Polygon& polygon, double threshold) {
+	int OurCustomSimplification::findDrasticChange(int height, const util::Polygon& polygon, double threshold) {
 		// calculate the bounding box
-		cv::Rect bbox = boundingBox(polygon.contour);
+		cv::Rect bbox = util::boundingBox(polygon.contour);
 
 		// create image of the contour of the current slice
 		cv::Mat img(size, CV_8U, cv::Scalar(0));
@@ -147,7 +147,7 @@ namespace lego {
 		cv::fillPoly(img, contours, cv::Scalar(255), cv::LINE_4);
 
 		for (int i = height + 1; i < voxel_data.size(); i++) {
-			double iou = calculateIOU(img, voxel_data[i], bbox);
+			double iou = util::calculateIOU(img, voxel_data[i], bbox);
 			if (iou < threshold) {
 				return i;
 			}
@@ -235,7 +235,7 @@ namespace lego {
 		}
 
 		// skip the points that are redundant
-		std::vector<cv::Point> simplified_small_aa_contour = removeRedundantPoint(small_aa_polygon);
+		std::vector<cv::Point> simplified_small_aa_contour = util::removeRedundantPoint(small_aa_polygon);
 
 		std::vector<cv::Point> simplified_small_aa_contour2;
 		for (int i = 0; i < simplified_small_aa_contour.size(); i++) {
@@ -247,7 +247,7 @@ namespace lego {
 				simplified_small_aa_contour2.push_back(simplified_small_aa_contour[i]);
 			}
 		}
-		simplified_small_aa_contour2 = removeRedundantPoint(simplified_small_aa_contour2);
+		simplified_small_aa_contour2 = util::removeRedundantPoint(simplified_small_aa_contour2);
 
 		if (simplified_small_aa_contour2.size() < 3) {
 			result.clear();
@@ -264,7 +264,7 @@ namespace lego {
 		double cost = 1.0 / (0.01 + optimizeSimplifiedContour(aa_contour_int, simplified_aa_contour));
 
 		// check if the simplified contour has self-intersecting
-		simplified_aa_contour = removeRedundantPoint(simplified_aa_contour);
+		simplified_aa_contour = util::removeRedundantPoint(simplified_aa_contour);
 		for (int i = 0; i < simplified_aa_contour.size(); i++) {
 			for (int j = i + 1; j < simplified_aa_contour.size(); j++) {
 				if (simplified_aa_contour[i] == simplified_aa_contour[j]) {
@@ -319,7 +319,7 @@ namespace lego {
 
 		// create the image of the input contour
 		cv::Mat img;
-		createImageFromContour(max_x - min_x + 1, max_y - min_y + 1, contour, cv::Point(-min_x, -min_y), img);
+		util::createImageFromContour(max_x - min_x + 1, max_y - min_y + 1, contour, cv::Point(-min_x, -min_y), img);
 
 		// list up the parameters
 		std::map<int, int> x_map;
@@ -351,8 +351,8 @@ namespace lego {
 				if ((next_it != x_map.end() && prop_x_map[it->first] <= prop_x_map[next_it->first]) || (next_it == x_map.end() && prop_x_map[it->first] <= max_x)) {
 					std::vector<cv::Point> proposed_contour = proposedContour(simplified_contour, prop_x_map, y_map);
 					cv::Mat img2;
-					createImageFromContour(max_x - min_x + 1, max_y - min_y + 1, proposed_contour, cv::Point(-min_x, -min_y), img2);
-					double score = calculateIOU(img, img2);
+					util::createImageFromContour(max_x - min_x + 1, max_y - min_y + 1, proposed_contour, cv::Point(-min_x, -min_y), img2);
+					double score = util::calculateIOU(img, img2);
 					if (score > best_score) {
 						best_score = score;
 						best_x_map = prop_x_map;
@@ -366,8 +366,8 @@ namespace lego {
 				if ((prev_it != x_map.end() && prop_x_map[it->first] >= prop_x_map[prev_it->first]) || (prev_it == x_map.end() && prop_x_map[it->first] >= min_x)) {
 					std::vector<cv::Point> proposed_contour = proposedContour(simplified_contour, prop_x_map, y_map);
 					cv::Mat img2;
-					createImageFromContour(max_x - min_x + 1, max_y - min_y + 1, proposed_contour, cv::Point(-min_x, -min_y), img2);
-					double score = calculateIOU(img, img2);
+					util::createImageFromContour(max_x - min_x + 1, max_y - min_y + 1, proposed_contour, cv::Point(-min_x, -min_y), img2);
+					double score = util::calculateIOU(img, img2);
 					if (score > best_score) {
 						best_score = score;
 						best_x_map = prop_x_map;
@@ -389,8 +389,8 @@ namespace lego {
 				if ((next_it != y_map.end() && prop_y_map[it->first] <= prop_y_map[next_it->first]) || (next_it == y_map.end() && prop_y_map[it->first] <= max_y)) {
 					std::vector<cv::Point> proposed_contour = proposedContour(simplified_contour, x_map, prop_y_map);
 					cv::Mat img2;
-					createImageFromContour(max_x - min_x + 1, max_y - min_y + 1, proposed_contour, cv::Point(-min_x, -min_y), img2);
-					double score = calculateIOU(img, img2);
+					util::createImageFromContour(max_x - min_x + 1, max_y - min_y + 1, proposed_contour, cv::Point(-min_x, -min_y), img2);
+					double score = util::calculateIOU(img, img2);
 					if (score > best_score) {
 						best_score = score;
 						best_x_map = x_map;
@@ -404,8 +404,8 @@ namespace lego {
 				if ((prev_it != y_map.end() && prop_y_map[it->first] >= prop_y_map[prev_it->first]) || (prev_it == y_map.end() && prop_y_map[it->first] >= min_y)) {
 					std::vector<cv::Point> proposed_contour = proposedContour(simplified_contour, x_map, prop_y_map);
 					cv::Mat img2;
-					createImageFromContour(max_x - min_x + 1, max_y - min_y + 1, proposed_contour, cv::Point(-min_x, -min_y), img2);
-					double score = calculateIOU(img, img2);
+					util::createImageFromContour(max_x - min_x + 1, max_y - min_y + 1, proposed_contour, cv::Point(-min_x, -min_y), img2);
+					double score = util::calculateIOU(img, img2);
 					if (score > best_score) {
 						best_score = score;
 						best_x_map = x_map;

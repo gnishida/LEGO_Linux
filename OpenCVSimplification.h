@@ -5,7 +5,7 @@
 #include "Building.h"
 #include "ContourUtils.h"
 
-namespace lego {
+namespace simp {
 
 	class OpenCVSimplification {
 	private:
@@ -20,10 +20,10 @@ namespace lego {
 		OpenCVSimplification(const std::vector<cv::Mat>& voxel_data, double epsilon, double layering_threshold, double snap_vertex_threshold, double snap_edge_threshold);
 
 		void simplify(std::vector<Building>& buildings);
-		void calculateBuilding(Building* parent, const Polygon& polygon, int height, std::vector<Building>& buildings);
-		Building calculateBuildingComponent(Building* parent, const Polygon& polygon, int bottom_height, int top_height);
-		int findDrasticChange(int height, const Polygon& polygon, double threshold);
-		Polygon simplifyPolygon(const Polygon& polygon, double epsilon);
+		void calculateBuilding(Building* parent, const util::Polygon& polygon, int height, std::vector<Building>& buildings);
+		Building calculateBuildingComponent(Building* parent, const util::Polygon& polygon, int bottom_height, int top_height);
+		int findDrasticChange(int height, const util::Polygon& polygon, double threshold);
+		util::Polygon simplifyPolygon(const util::Polygon& polygon, double epsilon);
 	};
 
 }

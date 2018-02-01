@@ -1,7 +1,7 @@
 #include "ContourUtils.h"
 #include <iostream>
 
-namespace lego {
+namespace util {
 	
 	void Polygon::translate(int x, int y) {
 		for (int i = 0; i < contour.size(); i++) {

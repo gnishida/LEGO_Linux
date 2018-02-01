@@ -1,7 +1,7 @@
 #include "OpenCVSimplification.h"
 #include "ContourUtils.h"
 
-namespace lego {
+namespace simp {
 
 	OpenCVSimplification::OpenCVSimplification(const std::vector<cv::Mat>& voxel_data, double epsilon, double layering_threshold, double snap_vertex_threshold, double snap_edge_threshold) {
 		this->voxel_data = voxel_data;
@@ -15,15 +15,15 @@ namespace lego {
 	void OpenCVSimplification::simplify(std::vector<Building>& buildings) {
 		buildings.clear();
 
-		std::vector<Polygon> polygons = findContours(voxel_data[5]);
+		std::vector<util::Polygon> polygons = util::findContours(voxel_data[5]);
 		for (int i = 0; i < polygons.size(); i++) {
 			calculateBuilding(NULL, polygons[i], 5, buildings);
 		}
 	}
 
-	void OpenCVSimplification::calculateBuilding(Building* parent, const Polygon& polygon, int height, std::vector<Building>& buildings) {
+	void OpenCVSimplification::calculateBuilding(Building* parent, const util::Polygon& polygon, int height, std::vector<Building>& buildings) {
 		// calculate the bounding box
-		cv::Rect bbox = boundingBox(polygon.contour);
+		cv::Rect bbox = util::boundingBox(polygon.contour);
 
 		// have 1px as margin
 		bbox.x = std::max(0, bbox.x - 1);
@@ -42,7 +42,7 @@ namespace lego {
 			if (next_height >= voxel_data.size()) return;
 
 			// extract contours
-			std::vector<Polygon> polygons = findContours(cv::Mat(voxel_data[next_height], bbox));
+			std::vector<util::Polygon> polygons = util::findContours(cv::Mat(voxel_data[next_height], bbox));
 
 			for (int i = 0; i < polygons.size(); i++) {
 				// offset back the contour and holes
@@ -51,7 +51,7 @@ namespace lego {
 				// check if the next contour is mostly within the contour
 				int cnt_total = 0;
 				int cnt_outside = 0;
-				cv::Rect next_bbox = boundingBox(polygons[i].contour);
+				cv::Rect next_bbox = util::boundingBox(polygons[i].contour);
 				for (int j = 0; j < 100; j++) {
 					cv::Point pt;
 					bool found = false;
@@ -82,9 +82,9 @@ namespace lego {
 	/**
 	* Calculate the building geometry by simplifying the specified footprint and holes using OpenCV function.
 	*/
-	Building OpenCVSimplification::calculateBuildingComponent(Building* parent, const Polygon& polygon, int bottom_height, int top_height) {
+	Building OpenCVSimplification::calculateBuildingComponent(Building* parent, const util::Polygon& polygon, int bottom_height, int top_height) {
 		// calculate the bounding box
-		cv::Rect bbox = boundingBox(polygon.contour);
+		cv::Rect bbox = util::boundingBox(polygon.contour);
 
 		// have 1px as margin
 		bbox.x = std::max(0, bbox.x - 1);
@@ -99,7 +99,7 @@ namespace lego {
 			double iou = 0;
 			for (int j = bottom_height; j < top_height; j++) {
 				// calculate IOU
-				iou += calculateIOU(voxel_data[i], voxel_data[j], bbox);
+				iou += util::calculateIOU(voxel_data[i], voxel_data[j], bbox);
 			}
 
 			if (iou > best_iou) {
@@ -109,13 +109,13 @@ namespace lego {
 		}
 		
 		// extract contours in the specified region
-		std::vector<Polygon> polygons = findContours(cv::Mat(voxel_data[best_slice], bbox));
+		std::vector<util::Polygon> polygons = util::findContours(cv::Mat(voxel_data[best_slice], bbox));
 		if (polygons.size() == 0) throw "No building is found.";
 		
 		// We should check which contour is the one to be processed,
 		// but we use the first one for now.
 		polygons[0].translate(bbox.x, bbox.y);
-		Polygon simplified_polygon = simplifyPolygon(polygons[0], epsilon);
+		util::Polygon simplified_polygon = simplifyPolygon(polygons[0], epsilon);
 		if (simplified_polygon.contour.size() < 3) throw "Invalid contour";
 		
 		// create a building object
@@ -129,7 +129,7 @@ namespace lego {
 		}
 
 		if (parent != NULL) {
-			snapPolygon(parent->footprint, building.footprint, snap_vertex_threshold, snap_edge_threshold);
+			util::snapPolygon(parent->footprint, building.footprint, snap_vertex_threshold, snap_edge_threshold);
 		}
 
 		// simplify the hole as well
@@ -144,9 +144,9 @@ namespace lego {
 		return building;
 	}
 
-	int OpenCVSimplification::findDrasticChange(int height, const Polygon& polygon, double threshold) {
+	int OpenCVSimplification::findDrasticChange(int height, const util::Polygon& polygon, double threshold) {
 		// calculate the bounding box
-		cv::Rect bbox = boundingBox(polygon.contour);
+		cv::Rect bbox = util::boundingBox(polygon.contour);
 
 		// create image of the contour of the current slice
 		cv::Mat img(size, CV_8U, cv::Scalar(0));
@@ -158,7 +158,7 @@ namespace lego {
 		cv::fillPoly(img, contours, cv::Scalar(255), cv::LINE_4);
 
 		for (int i = height + 1; i < voxel_data.size(); i++) {
-			double iou = calculateIOU(img, voxel_data[i], bbox);
+			double iou = util::calculateIOU(img, voxel_data[i], bbox);
 			if (iou < threshold) {
 				return i;
 			}
@@ -167,8 +167,8 @@ namespace lego {
 		return voxel_data.size();
 	}
 
-	Polygon OpenCVSimplification::simplifyPolygon(const Polygon& polygon, double epsilon) {
-		Polygon ans;
+	util::Polygon OpenCVSimplification::simplifyPolygon(const util::Polygon& polygon, double epsilon) {
+		util::Polygon ans;
 		cv::approxPolyDP(polygon.contour, ans.contour, epsilon, true);
 	
 		// simplify the hole as well

@@ -16,7 +16,7 @@
 #include <CGAL/Polygon_2.h>
 #include "Building.h"
 
-namespace lego {
+namespace util {
 
 	namespace ply {
 
@@ -60,12 +60,21 @@ namespace lego {
 		};
 
 
+		class PlyWriter {
+		protected:
+			PlyWriter() {}
 
-		void write(const char* filename, const std::vector<Building>& buildings);
-		
-		std::vector<std::vector<cv::Point2f>> tessellate(const std::vector<cv::Point2f>& points, const std::vector<std::vector<cv::Point2f>>& holes);
-		void mark_domains(CDT& ct, CDT::Face_handle start, int index, std::list<CDT::Edge>& border);
-		void mark_domains(CDT& cdt);
+		public:
+			static void write(const char* filename, const std::vector<simp::Building>& buildings);
+
+		private:
+			static void writeBuilding(const simp::Building& building, std::map<Point3d, int>& vertices_map, std::vector<Point3d>& vertices, std::vector<std::vector<int>>& faces);
+
+			static std::vector<std::vector<cv::Point2f>> tessellate(const std::vector<cv::Point2f>& points);
+			static std::vector<std::vector<cv::Point2f>> tessellate(const std::vector<cv::Point2f>& points, const std::vector<std::vector<cv::Point2f>>& holes);
+			static void mark_domains(CDT& ct, CDT::Face_handle start, int index, std::list<CDT::Edge>& border);
+			static void mark_domains(CDT& cdt);
+		};
 
 	}
 }
