@@ -11,12 +11,12 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include(${CGAL_USE_FILE})
 
 add_executable(LEGO_Linux
-	src/Building.cpp
-	src/ContourUtils.cpp
-	src/main.cpp
-	src/OpenCVSimplification.cpp
-	src/OurCustomSimplification.cpp
-	src/PlyWriter.cpp
+	Building.cpp
+	ContourUtils.cpp
+	main.cpp
+	OpenCVSimplification.cpp
+	OurCustomSimplification.cpp
+	PlyWriter.cpp
 )
 
 target_link_libraries(LEGO_Linux ${OpenCV_LIBS} Qt5::Core)
