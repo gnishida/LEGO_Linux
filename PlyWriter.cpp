@@ -95,7 +95,7 @@ namespace util {
 				Point3d p3(building.footprint[next].x, building.footprint[next].y, building.top_height);
 				Point3d p4(building.footprint[i].x, building.footprint[i].y, building.top_height);
 
-				faces.push_back({ vertices_map[p1], vertices_map[p2], vertices_map[p3], vertices_map[p4] });
+				faces.push_back({ vertices_map[p1], vertices_map[p4], vertices_map[p3], vertices_map[p2] });
 			}
 
 			// side faces of holes
