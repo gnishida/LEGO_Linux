@@ -135,7 +135,7 @@ namespace util {
 					pol.push_back(cv::Point2f(vit->x(), vit->y()));
 				}
 
-				if ((pol[2].x - pol[0].x) * (pol[1].y - pol[0].y) - (pol[2].y - pol[0].y) * (pol[1].x - pol[0].x) < 0) {
+				if ((pol[2].x - pol[0].x) * (pol[1].y - pol[0].y) - (pol[2].y - pol[0].y) * (pol[1].x - pol[0].x) > 0) {
 					std::reverse(pol.begin(), pol.end());
 				}
 
@@ -176,7 +176,7 @@ namespace util {
 						pol.push_back(cv::Point2f(vh->point().x(), vh->point().y()));
 					}
 
-					if ((pol[2].x - pol[0].x) * (pol[1].y - pol[0].y) - (pol[2].y - pol[0].y) * (pol[1].x - pol[0].x) < 0) {
+					if ((pol[2].x - pol[0].x) * (pol[1].y - pol[0].y) - (pol[2].y - pol[0].y) * (pol[1].x - pol[0].x) > 0) {
 						std::swap(pol[1], pol[2]);
 					}
 
