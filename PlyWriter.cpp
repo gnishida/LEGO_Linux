@@ -1,5 +1,6 @@
 #include "PlyWriter.h"
 #include <fstream>
+#include "ContourUtils.h"
 
 namespace util {
 	
@@ -86,8 +87,9 @@ namespace util {
 				faces.push_back(bottom_face);
 				faces.push_back(top_face);
 			}
-
+			
 			// side faces
+			std::vector<cv::Point2f> footprint = building.footprint;
 			for (int i = 0; i < building.footprint.size(); i++) {
 				int next = (i + 1) % building.footprint.size();
 				Point3d p1(building.footprint[i].x, building.footprint[i].y, building.bottom_height);
@@ -95,7 +97,7 @@ namespace util {
 				Point3d p3(building.footprint[next].x, building.footprint[next].y, building.top_height);
 				Point3d p4(building.footprint[i].x, building.footprint[i].y, building.top_height);
 
-				faces.push_back({ vertices_map[p1], vertices_map[p4], vertices_map[p3], vertices_map[p2] });
+				faces.push_back({ vertices_map[p1], vertices_map[p2], vertices_map[p3], vertices_map[p4] });
 			}
 
 			// side faces of holes
@@ -135,12 +137,7 @@ namespace util {
 					pol.push_back(cv::Point2f(vit->x(), vit->y()));
 				}
 
-				if ((pol[2].x - pol[0].x) * (pol[1].y - pol[0].y) - (pol[2].y - pol[0].y) * (pol[1].x - pol[0].x) > 0) {
-					std::reverse(pol.begin(), pol.end());
-				}
-
-				ans.push_back(pol);
-
+				util::counterClockwise(pol);
 				ans.push_back(pol);
 			}
 
@@ -176,10 +173,7 @@ namespace util {
 						pol.push_back(cv::Point2f(vh->point().x(), vh->point().y()));
 					}
 
-					if ((pol[2].x - pol[0].x) * (pol[1].y - pol[0].y) - (pol[2].y - pol[0].y) * (pol[1].x - pol[0].x) > 0) {
-						std::swap(pol[1], pol[2]);
-					}
-
+					util::counterClockwise(pol);
 					ans.push_back(pol);
 				}
 			}
