@@ -135,6 +135,12 @@ namespace util {
 					pol.push_back(cv::Point2f(vit->x(), vit->y()));
 				}
 
+				if ((pol[2].x - pol[0].x) * (pol[1].y - pol[0].y) - (pol[2].y - pol[0].y) * (pol[1].x - pol[0].x) < 0) {
+					std::reverse(pol.begin(), pol.end());
+				}
+
+				ans.push_back(pol);
+
 				ans.push_back(pol);
 			}
 
@@ -168,6 +174,10 @@ namespace util {
 					for (int i = 0; i < 3; i++) {
 						CDT::Vertex_handle vh = fit->vertex(i);
 						pol.push_back(cv::Point2f(vh->point().x(), vh->point().y()));
+					}
+
+					if ((pol[2].x - pol[0].x) * (pol[1].y - pol[0].y) - (pol[2].y - pol[0].y) * (pol[1].x - pol[0].x) < 0) {
+						std::swap(pol[1], pol[2]);
 					}
 
 					ans.push_back(pol);
