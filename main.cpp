@@ -33,17 +33,6 @@ int main(int argc, const char* argv[]) {
 	simp::OpenCVSimplification sim(voxel_data, 1, 0.7, 1, 0.5);
 	sim.simplify(buildings);
 
-	buildings.clear();
-	buildings.resize(1);
-	buildings[0].bottom_height = 0;
-	buildings[0].top_height = 8;
-	buildings[0].footprint.resize(4);
-	buildings[0].footprint[0] = cv::Point2f(0, 0);
-	buildings[0].footprint[1] = cv::Point2f(8, 0);
-	buildings[0].footprint[2] = cv::Point2f(8, 8);
-	buildings[0].footprint[3] = cv::Point2f(0, 8);
-	buildings[0].holes.clear();
-
 	util::ply::PlyWriter::write(argv[2], buildings);
 
 	std::cout << buildings.size() << " buildings are generated." << std::endl;
