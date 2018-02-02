@@ -142,6 +142,7 @@ namespace simp {
 		for (int i = 0; i < simplified_polygon.contour.size(); i++) {
 			building.footprint[i] = cv::Point2f(simplified_polygon.contour[i].x - size.width * 0.5, size.height * 0.5 - simplified_polygon.contour[i].y);
 		}
+		util::counterClockwise(building.footprint);
 
 		if (parent != NULL) {
 			util::snapPolygon(parent->footprint, building.footprint, snap_vertex_threshold, snap_edge_threshold);
@@ -154,6 +155,7 @@ namespace simp {
 			for (int j = 0; j < simplified_polygon.holes[i].size(); j++) {
 				building.holes[i][j] = cv::Point2f(simplified_polygon.holes[i][j].x - size.width * 0.5, size.height * 0.5 - simplified_polygon.holes[i][j].y);
 			}
+			util::counterClockwise(building.holes[i]);
 		}
 
 		return building;
