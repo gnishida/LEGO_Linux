@@ -12,7 +12,10 @@ include(${CGAL_USE_FILE})
 
 add_executable(LEGO_Linux
 	Building.cpp
+	BuildingSimplification.cpp
 	ContourUtils.cpp
+	DisjointVoxelData.cpp
+	LayerVoxelData.cpp
 	main.cpp
 	OpenCVSimplification.cpp
 	OurCustomSimplification.cpp

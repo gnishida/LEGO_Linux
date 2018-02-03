@@ -6,7 +6,7 @@ namespace util {
 	
 	namespace ply {
 
-		void PlyWriter::write(const char* filename, const std::vector<simp::Building>& buildings) {
+		void PlyWriter::write(const char* filename, const std::vector<std::shared_ptr<simp::Building>>& buildings) {
 			std::map<Point3d, int> vertices_map;
 			std::vector<Point3d> vertices;
 			std::vector<std::vector<int>> faces;
@@ -43,14 +43,14 @@ namespace util {
 			out.close();
 		}
 
-		void PlyWriter::writeBuilding(const simp::Building& building, std::map<Point3d, int>& vertices_map, std::vector<Point3d>& vertices, std::vector<std::vector<int>>& faces) {
+		void PlyWriter::writeBuilding(std::shared_ptr<simp::Building> building, std::map<Point3d, int>& vertices_map, std::vector<Point3d>& vertices, std::vector<std::vector<int>>& faces) {
 			std::vector<std::vector<cv::Point2f>> polygons;
 
-			if (building.holes.size() == 0) {
-				polygons = tessellate(building.footprint);
+			if (building->footprint.holes.size() == 0) {
+				polygons = tessellate(building->footprint.contour);
 			}
 			else {
-				polygons = tessellate(building.footprint, building.holes);
+				polygons = tessellate(building->footprint.contour, building->footprint.holes);
 			}
 
 			for (auto polygon : polygons) {
@@ -60,8 +60,8 @@ namespace util {
 				std::vector<int> top_face(polygon.size());
 
 				for (int i = 0; i < polygon.size(); i++) {
-					Point3d pt_bottom(polygon[i].x, polygon[i].y, building.bottom_height);
-					Point3d pt_top(polygon[i].x, polygon[i].y, building.top_height);
+					Point3d pt_bottom(polygon[i].x, polygon[i].y, building->bottom_height);
+					Point3d pt_top(polygon[i].x, polygon[i].y, building->top_height);
 
 					int index_bottom;
 					if (vertices_map.find(pt_bottom) == vertices_map.end()) {
@@ -91,30 +91,34 @@ namespace util {
 			}
 			
 			// side faces
-			std::vector<cv::Point2f> polygon = building.footprint;
+			std::vector<cv::Point2f> polygon = building->footprint.contour;
 			util::counterClockwise(polygon);
 			for (int i = 0; i < polygon.size(); i++) {
 				int next = (i + 1) % polygon.size();
-				Point3d p1(polygon[i].x, polygon[i].y, building.bottom_height);
-				Point3d p2(polygon[next].x, polygon[next].y, building.bottom_height);
-				Point3d p3(polygon[next].x, polygon[next].y, building.top_height);
-				Point3d p4(polygon[i].x, polygon[i].y, building.top_height);
+				Point3d p1(polygon[i].x, polygon[i].y, building->bottom_height);
+				Point3d p2(polygon[next].x, polygon[next].y, building->bottom_height);
+				Point3d p3(polygon[next].x, polygon[next].y, building->top_height);
+				Point3d p4(polygon[i].x, polygon[i].y, building->top_height);
 
 				faces.push_back({ vertices_map[p1], vertices_map[p2], vertices_map[p3], vertices_map[p4] });
 			}
 
 			// side faces of holes
-			for (auto hole : building.holes) {
+			for (auto hole : building->footprint.holes) {
 				util::clockwise(hole);
 				for (int i = 0; i < hole.size(); i++) {
 					int next = (i + 1) % hole.size();
-					Point3d p1(hole[i].x, hole[i].y, building.bottom_height);
-					Point3d p2(hole[next].x, hole[next].y, building.bottom_height);
-					Point3d p3(hole[next].x, hole[next].y, building.top_height);
-					Point3d p4(hole[i].x, hole[i].y, building.top_height);
+					Point3d p1(hole[i].x, hole[i].y, building->bottom_height);
+					Point3d p2(hole[next].x, hole[next].y, building->bottom_height);
+					Point3d p3(hole[next].x, hole[next].y, building->top_height);
+					Point3d p4(hole[i].x, hole[i].y, building->top_height);
 
 					faces.push_back({ vertices_map[p1], vertices_map[p2], vertices_map[p3], vertices_map[p4] });
 				}
+			}
+
+			for (int i = 0; i < building->children.size(); i++) {
+				writeBuilding(building->children[i], vertices_map, vertices, faces);
 			}
 		}
 
@@ -131,18 +135,20 @@ namespace util {
 			}
 
 			// tesselate the concave polygon
-			Polygon_list partition_polys;
-			Traits       partition_traits;
-			CGAL::greene_approx_convex_partition_2(polygon.vertices_begin(), polygon.vertices_end(), std::back_inserter(partition_polys), partition_traits);
+			if (polygon.is_simple()) {
+				Polygon_list partition_polys;
+				Traits       partition_traits;
+				CGAL::greene_approx_convex_partition_2(polygon.vertices_begin(), polygon.vertices_end(), std::back_inserter(partition_polys), partition_traits);
 
-			for (auto fit = partition_polys.begin(); fit != partition_polys.end(); ++fit) {
-				std::vector<cv::Point2f> pol;
-				for (auto vit = fit->vertices_begin(); vit != fit->vertices_end(); ++vit) {
-					pol.push_back(cv::Point2f(vit->x(), vit->y()));
+				for (auto fit = partition_polys.begin(); fit != partition_polys.end(); ++fit) {
+					std::vector<cv::Point2f> pol;
+					for (auto vit = fit->vertices_begin(); vit != fit->vertices_end(); ++vit) {
+						pol.push_back(cv::Point2f(vit->x(), vit->y()));
+					}
+
+					util::counterClockwise(pol);
+					ans.push_back(pol);
 				}
-
-				util::counterClockwise(pol);
-				ans.push_back(pol);
 			}
 
 			return ans;
@@ -157,30 +163,34 @@ namespace util {
 			for (int i = 0; i < points.size(); i++) {
 				polygon.push_back(Point(points[i].x, points[i].y));
 			}
-			cdt.insert_constraint(polygon.vertices_begin(), polygon.vertices_end(), true);
-			for (int i = 0; i < holes.size(); i++) {
-				Polygon_2 polygon;
-				for (int j = 0; j < holes[i].size(); j++) {
-					polygon.push_back(Point(holes[i][j].x, holes[i][j].y));
-				}
+
+			if (polygon.is_simple()) {
 				cdt.insert_constraint(polygon.vertices_begin(), polygon.vertices_end(), true);
-			}
-
-			//Mark facets that are inside the domain bounded by the polygon
-			mark_domains(cdt);
-
-			for (CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
-				if (fit->info().in_domain()) {
-					std::vector<cv::Point2f> pol;
-					for (int i = 0; i < 3; i++) {
-						CDT::Vertex_handle vh = fit->vertex(i);
-						pol.push_back(cv::Point2f(vh->point().x(), vh->point().y()));
+				for (int i = 0; i < holes.size(); i++) {
+					Polygon_2 polygon;
+					for (int j = 0; j < holes[i].size(); j++) {
+						polygon.push_back(Point(holes[i][j].x, holes[i][j].y));
 					}
+					cdt.insert_constraint(polygon.vertices_begin(), polygon.vertices_end(), true);
+				}
 
-					util::counterClockwise(pol);
-					ans.push_back(pol);
+				//Mark facets that are inside the domain bounded by the polygon
+				mark_domains(cdt);
+
+				for (CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+					if (fit->info().in_domain()) {
+						std::vector<cv::Point2f> pol;
+						for (int i = 0; i < 3; i++) {
+							CDT::Vertex_handle vh = fit->vertex(i);
+							pol.push_back(cv::Point2f(vh->point().x(), vh->point().y()));
+						}
+
+						util::counterClockwise(pol);
+						ans.push_back(pol);
+					}
 				}
 			}
+
 			return ans;
 		}
 
