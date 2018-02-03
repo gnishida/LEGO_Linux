@@ -92,7 +92,7 @@ namespace util {
 		for (int i = 0; i < ans.size(); ) {
 			int prev = (i - 1 + ans.size()) % ans.size();
 			int next = (i + 1) % ans.size();
-			if (std::abs(crossProduct(ans[i] - ans[prev], ans[next] - ans[i])) < 0.0001) {
+			if (dotProduct(ans[i] - ans[prev], ans[next] - ans[i]) > 0 && std::abs(crossProduct(ans[i] - ans[prev], ans[next] - ans[i])) < 0.0001) {
 				ans.erase(ans.begin() + i);
 			}
 			else {
@@ -118,7 +118,7 @@ namespace util {
 		for (int i = 0; i < ans.size();) {
 			int prev = (i - 1 + ans.size()) % ans.size();
 			int next = (i + 1) % ans.size();
-			if (std::abs(crossProduct(ans[i] - ans[prev], ans[next] - ans[i])) < 0.0001) {
+			if (dotProduct(ans[i] - ans[prev], ans[next] - ans[i]) > 0 && std::abs(crossProduct(ans[i] - ans[prev], ans[next] - ans[i])) < 0.0001) {
 				ans.erase(ans.begin() + i);
 			}
 			else {
@@ -203,17 +203,14 @@ namespace util {
 	std::vector<Polygon> findContours(const cv::Mat& img) {
 		std::vector<Polygon> ans;
 
-		// dilate the image
-		cv::Mat dilated = img.clone();
-		/*
-		cv::Mat_<uchar> kernel = (cv::Mat_<uchar>(3, 3) << 1, 1, 0, 1, 1, 0, 0, 0, 0);
-		cv::dilate(dilated, dilated, kernel);
-		*/
-
 		// add padding to the image
-		cv::Mat padded(dilated.rows + 2, dilated.cols + 2, CV_8U, cv::Scalar(0));
-		dilated.copyTo(padded(cv::Rect(1, 1, dilated.cols, dilated.rows)));
+		cv::Mat padded(img.rows + 1, img.cols + 1, CV_8U, cv::Scalar(0));
+		img.copyTo(padded(cv::Rect(0, 0, img.cols, img.rows)));
 
+		// dilate the image
+		cv::Mat_<uchar> kernel = (cv::Mat_<uchar>(3, 3) << 1, 1, 0, 1, 1, 0, 0, 0, 0);
+		cv::dilate(padded, padded, kernel);
+		
 		// extract contours
 		std::vector<std::vector<cv::Point>> contours;
 		std::vector<cv::Vec4i> hierarchy;
@@ -226,18 +223,20 @@ namespace util {
 			Polygon polygon;
 			polygon.contour = addCornerToOpenCVContour(contours[i], padded);
 
-			// obtain all the holes inside this contour
-			int hole_id = hierarchy[i][2];
-			while (hole_id != -1) {
-				std::vector<cv::Point2f> hole = addCornerToOpenCVContour(contours[hole_id], padded);
-				polygon.holes.push_back(hole);
-				hole_id = hierarchy[hole_id][0];
+			if (polygon.contour.size() >= 3) {
+				// obtain all the holes inside this contour
+				int hole_id = hierarchy[i][2];
+				while (hole_id != -1) {
+					std::vector<cv::Point2f> hole = addCornerToOpenCVContour(contours[hole_id], padded);
+					polygon.holes.push_back(hole);
+					hole_id = hierarchy[hole_id][0];
+				}
+
+				// since we added 1px of padding, we need to adjust the coordinates of the polygon
+				polygon.translate(-1, -1);
+
+				ans.push_back(polygon);
 			}
-
-			// since we added 1px of padding, we need to adjust the coordinates of the polygon
-			polygon.translate(-1, -1);
-
-			ans.push_back(polygon);
 		}
 
 		return ans;
@@ -252,7 +251,7 @@ namespace util {
 			int next = (i + 1) % polygon.size();
 
 			// check if the edge is diagonal
-			if (std::abs(polygon[next].x - polygon[i].x) == 1 && std::abs(polygon[next].y == polygon[i].y) == 1) {
+			if (std::abs(polygon[next].x - polygon[i].x) == 1 && std::abs(polygon[next].y - polygon[i].y) == 1) {
 				// add a right angle corner
 				cv::Point2f p(polygon[next].x, polygon[i].y);
 				if (img.at<uchar>(p.y, p.x) == 255) ans.push_back(p);
