@@ -1,0 +1,3 @@
+/home/lego/LEGO_Linux/build/CMakeFiles/rebuild_cache.dir
+/home/lego/LEGO_Linux/build/CMakeFiles/edit_cache.dir
+/home/lego/LEGO_Linux/build/CMakeFiles/LEGO_Linux.dir
