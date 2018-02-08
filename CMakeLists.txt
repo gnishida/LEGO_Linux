@@ -23,4 +23,4 @@ add_executable(LEGO_Linux
 
 target_link_libraries(LEGO_Linux ${OpenCV_LIBS} Qt5::Core)
 
-set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+set (CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
