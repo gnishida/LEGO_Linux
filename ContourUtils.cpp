@@ -3,6 +3,7 @@
 #include <boost/polygon/polygon.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
+#include <list>
 
 namespace util {
 	
@@ -351,12 +352,12 @@ namespace util {
 	* The images have to be CV_8U type.
 	*/
 	double calculateIOU(const cv::Mat_<uchar>& img, const cv::Mat_<uchar>& img2) {
-		int union_cnt = 0;
-		int inter_cnt = 0;
+		double union_cnt = 0;
+		double inter_cnt = 0;
 		for (int r = 0; r < img.rows; r++) {
 			for (int c = 0; c < img.cols; c++) {
-				if (img.at<uchar>(r, c) == 255 || img2.at<uchar>(r, c) == 255) union_cnt++;
-				if (img.at<uchar>(r, c) == 255 && img2.at<uchar>(r, c) == 255) inter_cnt++;
+				union_cnt += std::max(img.at<uchar>(r, c), img2.at<uchar>(r, c));
+				inter_cnt += std::min(img.at<uchar>(r, c), img2.at<uchar>(r, c));
 			}
 		}
 
@@ -369,17 +370,129 @@ namespace util {
 	* Check the IOU only within the specified region, rect.
 	*/
 	double calculateIOU(const cv::Mat_<uchar>& img1, const cv::Mat_<uchar>& img2, const cv::Rect& rect) {
-		int union_cnt = 0;
-		int inter_cnt = 0;
+		double union_cnt = 0;
+		double inter_cnt = 0;
 
 		for (int r = rect.y; r < rect.y + rect.height; r++) {
 			for (int c = rect.x; c < rect.x + rect.width; c++) {
-				if (img1.at<uchar>(r, c) == 255 || img2.at<uchar>(r, c) == 255) union_cnt++;
-				if (img1.at<uchar>(r, c) == 255 && img2.at<uchar>(r, c) == 255) inter_cnt++;
+				union_cnt += std::max(img1.at<uchar>(r, c), img2.at<uchar>(r, c));
+				inter_cnt += std::min(img1.at<uchar>(r, c), img2.at<uchar>(r, c));
 			}
 		}
 
 		return (float)inter_cnt / union_cnt;
+	}
+
+	double calculateIOU(const Polygon& polygon1, const Polygon& polygon2) {
+		CGAL::Polygon_2<Kernel> P1;
+		for (int i = 0; i < polygon1.contour.size(); i++) {
+			P1.push_back(Kernel::Point_2(polygon1.contour[i].x, polygon1.contour[i].y));
+		}
+		if (P1.is_clockwise_oriented()) P1.reverse_orientation();
+		std::vector<CGAL::Polygon_2<Kernel>> P1_holes(polygon1.holes.size());
+		for (int i = 0; i < polygon1.holes.size(); i++) {
+			for (int j = 0; j < polygon1.holes[i].size(); j++) {
+				P1_holes[i].push_back(Kernel::Point_2(polygon1.holes[i][j].x, polygon1.holes[i][j].y));
+			}
+			if (P1_holes[i].is_counterclockwise_oriented()) P1_holes[i].reverse_orientation();
+		}
+		CGAL::Polygon_with_holes_2<Kernel> PH1(P1, P1_holes.begin(), P1_holes.end());
+
+		CGAL::Polygon_2<Kernel> P2;
+		for (int i = 0; i < polygon2.contour.size(); i++) {
+			P2.push_back(Kernel::Point_2(polygon2.contour[i].x, polygon2.contour[i].y));
+		}
+		if (P2.is_clockwise_oriented()) P2.reverse_orientation();
+		std::vector<CGAL::Polygon_2<Kernel>> P2_holes(polygon2.holes.size());
+		for (int i = 0; i < polygon2.holes.size(); i++) {
+			for (int j = 0; j < polygon2.holes[i].size(); j++) {
+				P2_holes[i].push_back(Kernel::Point_2(polygon2.holes[i][j].x, polygon2.holes[i][j].y));
+			}
+			if (P2_holes[i].is_counterclockwise_oriented()) P2_holes[i].reverse_orientation();
+		}
+		CGAL::Polygon_with_holes_2<Kernel> PH2(P2, P2_holes.begin(), P2_holes.end());
+
+		// calculate union
+		CGAL::Polygon_with_holes_2<Kernel> unionR;
+		if (!CGAL::join(PH1, PH2, unionR)) {
+			// there is no intersection.
+			return 0;
+		}
+
+		double union_area = std::abs(unionR.outer_boundary().area());
+		for (auto it = unionR.holes_begin(); it != unionR.holes_end(); it++) {
+			union_area -= std::abs(it->area());
+		}
+
+		// calculate intersection
+		std::list<CGAL::Polygon_with_holes_2<Kernel>> intR;
+		std::list<CGAL::Polygon_with_holes_2<Kernel>>::const_iterator it;
+
+		CGAL::intersection(PH1, PH2, std::back_inserter(intR));
+
+		double intersection_area = 0;
+		for (it = intR.begin(); it != intR.end(); ++it) {
+			intersection_area += std::abs(it->outer_boundary().area());
+			for (auto it2 = it->holes_begin(); it2 != it->holes_end(); it2++) {
+				intersection_area -= std::abs(it2->area());
+			}
+			
+		}
+
+		return intersection_area / union_area;
+	}
+	
+	double calculateIOU(const Ring& polygon1, const Ring& polygon2) {
+		CGAL::Polygon_2<Kernel> P1;
+		for (int i = 0; i < polygon1.size(); i++) {
+			P1.push_back(Kernel::Point_2(polygon1[i].x, polygon1[i].y));
+		}
+		if (P1.is_clockwise_oriented()) P1.reverse_orientation();
+
+		CGAL::Polygon_2<Kernel> P2;
+		for (int i = 0; i < polygon2.size(); i++) {
+			P2.push_back(Kernel::Point_2(polygon2[i].x, polygon2[i].y));
+		}
+		if (P2.is_clockwise_oriented()) P2.reverse_orientation();
+
+		// calculate union
+		CGAL::Polygon_with_holes_2<Kernel> unionR;
+		if (!CGAL::join(P1, P2, unionR)) {
+			// there is no intersection.
+			return 0;
+		}
+
+		double union_area = std::abs(unionR.outer_boundary().area());
+		for (auto it = unionR.holes_begin(); it != unionR.holes_end(); it++) {
+			union_area -= std::abs(it->area());
+		}
+
+		// calculate intersection
+		std::list<CGAL::Polygon_with_holes_2<Kernel>> intR;
+		std::list<CGAL::Polygon_with_holes_2<Kernel>>::const_iterator it;
+
+		CGAL::intersection(P1, P2, std::back_inserter(intR));
+
+		double intersection_area = 0;
+		for (it = intR.begin(); it != intR.end(); ++it) {
+			intersection_area += std::abs(it->outer_boundary().area());
+			for (auto it2 = it->holes_begin(); it2 != it->holes_end(); it2++) {
+				intersection_area -= std::abs(it2->area());
+			}
+
+		}
+
+		return intersection_area / union_area;
+	}
+
+	double calculateArea(const cv::Mat_<uchar>& img) {
+		double area = 0.0;
+		for (int r = 0; r < img.rows; r++) {
+			for (int c = 0; c < img.cols; c++) {
+				area += img(r, c);
+			}
+		}
+		return area / 255;
 	}
 
 	/**
@@ -571,27 +684,44 @@ namespace util {
 	 * Create image from the contour.
 	 */
 	void createImageFromContour(int width, int height, const std::vector<cv::Point>& contour, const cv::Point& offset, cv::Mat_<uchar>& result) {
-		result = cv::Mat_<uchar>::zeros(height, width);
+		result = cv::Mat_<uchar>::zeros(height * 2, width * 2);
 		std::vector<std::vector<cv::Point>> contour_points(1);
-		contour_points[0] = contour;
-		cv::fillPoly(result, contour_points, cv::Scalar(255), cv::LINE_4, 0, offset);
+
+		contour_points[0].resize(contour.size());
+		for (int i = 0; i < contour.size(); i++) {
+			contour_points[0][i] = cv::Point((contour[i].x + offset.x) * 2, (contour[i].y + offset.y) * 2);
+		}
+
+		cv::fillPoly(result, contour_points, cv::Scalar(255), cv::LINE_4);
+
+		// erode image
+		cv::Mat_<uchar> kernel = (cv::Mat_<uchar>(3, 3) << 0, 0, 0, 0, 0, 1, 0, 1, 1);
+		cv::erode(result, result, kernel);
+
+		cv::resize(result, result, cv::Size(width, height), 0, 0, cv::INTER_NEAREST);
 	}
 
 	void createImageFromPolygon(int width, int height, const Polygon& polygon, const cv::Point& offset, cv::Mat_<uchar>& result) {
-		result = cv::Mat_<uchar>::zeros(height, width);
+		result = cv::Mat_<uchar>::zeros(height * 2, width * 2);
 		std::vector<std::vector<cv::Point>> contour_points(1 + polygon.holes.size());
 
 		contour_points[0].resize(polygon.contour.size());
 		for (int i = 0; i < polygon.contour.size(); i++) {
-			contour_points[0][i] = cv::Point(polygon.contour[i].x, polygon.contour[i].y);
+			contour_points[0][i] = cv::Point((polygon.contour[i].x + offset.x) * 2, (polygon.contour[i].y + offset.y) * 2);
 		}
 		for (int i = 0; i < polygon.holes.size(); i++) {
 			contour_points[i + 1].resize(polygon.holes[i].size());
 			for (int j = 0; j < polygon.holes[i].size(); j++) {
-				contour_points[i + 1][j] = cv::Point(polygon.holes[i][j].x, polygon.holes[i][j].y);
+				contour_points[i + 1][j] = cv::Point((polygon.holes[i][j].x + offset.x) * 2, (polygon.holes[i][j].y + offset.y) * 2);
 			}
 		}
-		cv::fillPoly(result, contour_points, cv::Scalar(255), cv::LINE_4, 0, offset);
+		cv::fillPoly(result, contour_points, cv::Scalar(255), cv::LINE_4);
+
+		// erode image
+		cv::Mat_<uchar> kernel = (cv::Mat_<uchar>(3, 3) << 0, 0, 0, 0, 0, 1, 0, 1, 1);
+		cv::erode(result, result, kernel);
+
+		cv::resize(result, result, cv::Size(width, height), 0, 0, cv::INTER_NEAREST);
 	}
 
 	void snapPolygon(const std::vector<cv::Point2f>& ref_polygon, std::vector<cv::Point2f>& polygon, float snap_vertex_threshold, float snap_edge_threshold) {
@@ -673,33 +803,7 @@ namespace util {
 	std::vector<std::vector<cv::Point2f>> tessellate(const Ring& points) {
 		std::vector<std::vector<cv::Point2f>> ans;
 
-		Polygon_2 polygon;
-		for (int i = 0; i < points.size(); ++i) {
-			polygon.push_back(Point_2(points[i].x, points[i].y));
-		}
-
-		if (polygon.is_simple()) {
-			if (polygon.is_clockwise_oriented()) {
-				polygon.reverse_orientation();
-			}
-
-			// tesselate the concave polygon
-			Polygon_list partition_polys;
-			Traits       partition_traits;
-			CGAL::greene_approx_convex_partition_2(polygon.vertices_begin(), polygon.vertices_end(), std::back_inserter(partition_polys), partition_traits);
-
-			for (auto fit = partition_polys.begin(); fit != partition_polys.end(); ++fit) {
-				std::vector<cv::Point2f> pol;
-				for (auto vit = fit->vertices_begin(); vit != fit->vertices_end(); ++vit) {
-					pol.push_back(cv::Point2f(vit->x(), vit->y()));
-				}
-
-				util::counterClockwise(pol);
-				ans.push_back(pol);
-			}
-		}
-
-		return ans;
+		return tessellate(points, {});
 	}
 
 	std::vector<std::vector<cv::Point2f>> tessellate(const Ring& points, const std::vector<Ring>& holes) {
@@ -707,17 +811,17 @@ namespace util {
 
 		//Insert the polygons into a constrained triangulation
 		CDT cdt;
-		Polygon_2 polygon;
+		CGAL::Partition_traits_2<Kernel>::Polygon_2 polygon;
 		for (int i = 0; i < points.size(); i++) {
-			polygon.push_back(Point(points[i].x, points[i].y));
+			polygon.push_back(CDT::Point(points[i].x, points[i].y));
 		}
 
 		if (polygon.is_simple()) {
 			cdt.insert_constraint(polygon.vertices_begin(), polygon.vertices_end(), true);
 			for (int i = 0; i < holes.size(); i++) {
-				Polygon_2 polygon;
+				CGAL::Partition_traits_2<Kernel>::Polygon_2 polygon;
 				for (int j = 0; j < holes[i].size(); j++) {
-					polygon.push_back(Point(holes[i][j].x, holes[i][j].y));
+					polygon.push_back(CDT::Point(holes[i][j].x, holes[i][j].y));
 				}
 				cdt.insert_constraint(polygon.vertices_begin(), polygon.vertices_end(), true);
 			}

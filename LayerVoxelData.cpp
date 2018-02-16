@@ -30,14 +30,13 @@ namespace util {
 		this->threshold = 255 * threshold;
 	}
 
-	std::shared_ptr<Layer> LayerVoxelData::layering(float layering_threshold) {
-		int height = 5;
-
-		int voxel_count = countVoxel(voxel_data[height]);
+	std::shared_ptr<Layer> LayerVoxelData::layering(int ground_level, float layering_threshold) {
+		// check if there is a voxel at the ground level
+		int voxel_count = countVoxel(voxel_data[ground_level]);
 		if (voxel_count == 0) throw "No voxel at the bottom.";
 
-		std::shared_ptr<Layer> layer = std::shared_ptr<Layer>(new Layer(height, height));
-		layering(layer, voxel_data[height], height, voxel_data[height], layering_threshold);
+		std::shared_ptr<Layer> layer = std::shared_ptr<Layer>(new Layer(ground_level, ground_level));
+		layering(layer, voxel_data[ground_level], ground_level, voxel_data[ground_level], layering_threshold);
 		return layer;
 	}
 

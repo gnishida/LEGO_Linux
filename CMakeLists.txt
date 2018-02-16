@@ -10,7 +10,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include(${CGAL_USE_FILE})
 
 add_executable(LEGO_Linux
-	Building.cpp
+	BuildingLayer.cpp
 	BuildingSimplification.cpp
 	ContourUtils.cpp
 	DisjointVoxelData.cpp
