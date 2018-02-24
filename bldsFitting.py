@@ -1,4 +1,4 @@
-import sys,argparse,os
+import sys,argparse,os,shutil
 
 def main(args=None):
     
@@ -18,18 +18,17 @@ def main(args=None):
     slices_folder = "tmp_slices"
 
     # create the tmp folder
-    # remove the temporary folder
-    cmd = " ".join(["mkdir", slices_folder])
-    print(cmd)
-    os.system(cmd)
+    if os.path.isdir(slices_folder):
+        shutil.rmtree(slices_folder, ignore_errors=True)
+   	os.mkdir(slices_folder)
+
     #args.threshold = 0.5
     #if args.threshold is None:
     #    cmd = " ".join(["lego", "vdb.horzSlice", args.input_vdb, "--name", slices_folder + "/slice_%03d.png"])
     #    print(cmd)
     #    os.system(cmd)
     #else:
-    cmd = " ".join(["lego", "vdb.horzSlice", args.input_vdb, "--name", slices_folder + "/slice_%03d.png",
-                        "--threshold", "0.5"])
+    cmd = " ".join(["lego", "vdb.horzSlice", args.input_vdb, "--name", slices_folder + "/slice_%03d.png", "--threshold", "0.5"])
     print(cmd)
     os.system(cmd)
 
@@ -39,9 +38,8 @@ def main(args=None):
     os.system(cmd)
 
     # remove the temporary folder
-    cmd = " ".join(["rm -r", slices_folder])
-    print(cmd)
-    #os.system(cmd)
+    if os.path.isdir(slices_folder):
+        shutil.rmtree(slices_folder, ignore_errors=True)
 
 
 if __name__ == "__main__":
