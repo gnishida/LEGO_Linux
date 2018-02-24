@@ -17,8 +17,8 @@ add_executable(LEGO_Linux
 	util/LayerVoxelData.cpp
 	main.cpp
 	simp/DPSimplification.cpp
-	sim/RightAngleSimplification.cpp
-	sim/CurveSimplification.cpp
+	simp/RightAngleSimplification.cpp
+	simp/CurveSimplification.cpp
 	PlyWriter.cpp
 )
 
