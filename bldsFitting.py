@@ -7,11 +7,11 @@ def main(args=None):
     
     parser = argparse.ArgumentParser(description='Building Modeling from vdb')
     
-    parser.add_argument('input_vdb', type=str, required=True, help='input vdb filename')
-    parser.add_argument('input_binary', type=str, required=True, help='input binary filename')
-    parser.add_argument('output', type=str, required=True, help='output ply filename')
+    parser.add_argument('input_vdb', type=str, help='input vdb filename')
+    parser.add_argument('input_binary', type=str, help='input binary filename')
+    parser.add_argument('output', type=str, help='output ply filename')
     #parser.add_argument('-t', '--threshold', type=float, help='threshold')
-    parser.add_argument('-w', '--weight', type=float, required=True, help='The relative weight of accuracy term to the simplicity term [0, 1].')
+    parser.add_argument('weight', type=float, help='The relative weight of accuracy term to the simplicity term [0, 1].')
     args = parser.parse_args(args)
 
     # slices_folder name is a temporary fold to store the slice images
