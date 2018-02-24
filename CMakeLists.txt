@@ -10,14 +10,15 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include(${CGAL_USE_FILE})
 
 add_executable(LEGO_Linux
-	BuildingLayer.cpp
-	BuildingSimplification.cpp
-	ContourUtils.cpp
-	DisjointVoxelData.cpp
-	LayerVoxelData.cpp
+	util/BuildingLayer.cpp
+	simp/BuildingSimplification.cpp
+	util/ContourUtils.cpp
+	util/DisjointVoxelData.cpp
+	util/LayerVoxelData.cpp
 	main.cpp
-	OpenCVSimplification.cpp
-	OurCustomSimplification.cpp
+	simp/DPSimplification.cpp
+	sim/RightAngleSimplification.cpp
+	sim/CurveSimplification.cpp
 	PlyWriter.cpp
 )
 
