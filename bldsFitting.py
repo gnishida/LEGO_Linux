@@ -33,7 +33,7 @@ def main(args=None):
     print(cmd)
     os.system(cmd)
 
-    cmd = " ".join(["./" + args.input_binary, slices_folder + "/slice_001.png", str(arg.weight), args.output])
+    cmd = " ".join(["./" + args.input_binary, slices_folder + "/slice_001.png", str(args.weight), args.output])
     #cmd = " ".join(["./" + args.input_binary, slices_folder + "/slice_000.png"])
     print(cmd)
     os.system(cmd)
