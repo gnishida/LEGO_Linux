@@ -20,7 +20,7 @@ def main(args=None):
     # create the tmp folder
     if os.path.isdir(slices_folder):
         shutil.rmtree(slices_folder, ignore_errors=True)
-   	os.mkdir(slices_folder)
+    os.mkdir(slices_folder)
 
     #args.threshold = 0.5
     #if args.threshold is None:
