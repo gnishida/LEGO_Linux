@@ -31,8 +31,8 @@ namespace simp {
 				contour[i] = input.contour[i];
 			if (contour.size() > 80){
 				util::Polygon output;
-				int bContainCurve = approxContour(contour, output, epsilon, curve_threshold);
-				if (bContainCurve == 1)
+				bool bContainCurve = approxContour(contour, output, epsilon, curve_threshold);
+				if (bContainCurve)
 				{
 					polygon.contour = output.contour;
 					polygon.mat = polygon.contour.mat;
@@ -55,6 +55,9 @@ namespace simp {
 				else{
 					std::vector<cv::Point2f> output_tmp;
 					cv::approxPolyDP(cv::Mat(contour), output_tmp, epsilon, true);
+					if (output_tmp.size() < 3){
+						throw "No building is found.";
+					}
 					polygon.contour.resize(output_tmp.size());
 					int index = 0;
 					for (int k = 0; k < output_tmp.size(); k++){
@@ -82,6 +85,9 @@ namespace simp {
 				std::vector<cv::Point2f> output_tmp;
 				cv::approxPolyDP(cv::Mat(contour), output_tmp, epsilon, true);
 				polygon.contour.resize(output_tmp.size());
+				if (output_tmp.size() < 3){
+					throw "No building is found.";
+				}
 				int index = 0;
 				for (int k = 0; k < output_tmp.size(); k++){
 					polygon.contour[k] = output_tmp[k];
@@ -256,10 +262,10 @@ namespace simp {
 	}
 
 	/**
-	* @return			0:not curve 1: curve
+	* @return			false:not curve true: curve
 	*/
-	int CurveSimplification::approxContour(std::vector<cv::Point2f>& input, util::Polygon &output, float epsilon, float curve_threshold){
-		int bContainCurve = 0;
+	bool CurveSimplification::approxContour(std::vector<cv::Point2f>& input, util::Polygon &output, float epsilon, float curve_threshold){
+		bool bContainCurve = 0;
 		std::vector<cv::Point2f> clean_contour;
 		std::vector<int> contour_points_type;
 		std::vector<cv::Point3f> contour_points_circle;
@@ -357,7 +363,7 @@ namespace simp {
 				type_final_contour.push_back(2);
 				i++;
 				count++;
-				bContainCurve = 1;
+				bContainCurve = true;
 			}
 			else{
 				simplified_tmp.clear();
@@ -379,7 +385,7 @@ namespace simp {
 				i = index;
 			}
 		}
-		if (bContainCurve == 1){
+		if (bContainCurve){
 			// generate output polygon and decomposePolygon here
 			output.contour.resize(final_contour.size());
 			
@@ -396,6 +402,9 @@ namespace simp {
 					bfind_start = true;
 				}
 			}
+			// check whether the polygon is simple
+			if (!util::isSimple(output.contour))
+				return false;
 			// The transfomration matrix should be same for the external contour and the internal holes
 			// because for OpenCV simplification, transformation is just to trasnform from OpenCV image coordinates
 			// to the world coordinate system.
@@ -441,7 +450,7 @@ namespace simp {
 					std::vector<cv::Point2f> end_points;
 					end_points.push_back(start + center);
 					end_points.push_back(end + center);
-					if (concaveCurve(end_points, output)){
+					if (concaveCurve(end_points, output) && curve_poitns.size() < final_contour.size()){
 						if (curve_start_index >= curve_end_index){
 							for (int j = curve_start_index; j < curve_end_index + final_contour.size(); j++)
 								type_final_contour[j % final_contour.size()] = 3;
@@ -513,7 +522,7 @@ namespace simp {
 				outside++;
 		}
 		//std::cout << "outside is " << outside << std::endl;
-		if (outside > 5)
+		if (outside > 2)
 			return true;
 		else
 			return false;
@@ -602,6 +611,7 @@ namespace simp {
 			end_tmp -= 360;
 		if (start_tmp >= mid_tmp && mid_tmp >= end_tmp && (end_tmp - start_tmp) >= -360)
 			return end_tmp - start_tmp;
+		return end_tmp - start_tmp;
 	}
 
 	bool CurveSimplification::valid_curve(double threshold, const std::vector<cv::Point2d>& points, cv::Point2d center, double radius, cv::Rect bbox){
