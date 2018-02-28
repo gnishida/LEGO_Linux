@@ -10,16 +10,15 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include(${CGAL_USE_FILE})
 
 add_executable(LEGO_Linux
+	main.cpp
 	util/BuildingLayer.cpp
-	simp/BuildingSimplification.cpp
 	util/ContourUtils.cpp
 	util/DisjointVoxelData.cpp
-	util/LayerVoxelData.cpp
-	main.cpp
+	util/PlyWriter.cpp
+	simp/BuildingSimplification.cpp
 	simp/DPSimplification.cpp
 	simp/RightAngleSimplification.cpp
 	simp/CurveSimplification.cpp
-	util/PlyWriter.cpp
 )
 
 target_link_libraries(LEGO_Linux ${OpenCV_LIBS} Qt5::Core)
