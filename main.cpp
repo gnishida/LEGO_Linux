@@ -7,7 +7,7 @@
 
 int main(int argc, const char* argv[]) {
 	if (argc < 5) {
-		std::cerr << "Usage: " << argv[0] << " <slice image filename> <weight [0-1]> <algorithm option: 1 - ALl, 2 - DP> <output filename>" << std::endl;
+		std::cerr << "Usage: " << argv[0] << " <slice image filename> <weight [0-1]> <algorithm option: 1 - All, 2 - DP> <output filename>" << std::endl;
 		return -1;
 	}
 
