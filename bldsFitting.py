@@ -29,7 +29,7 @@ def main(args=None):
     #    print(cmd)
     #    os.system(cmd)
     #else:
-    cmd = " ".join(["lego", "vdb.horzSlice", args.input_vdb, "--name", slices_folder + "/slice_%03d.png", "--threshold", "0.5"])
+    cmd = " ".join(["lego vdb horzSlice", args.input_vdb, "--name", slices_folder + "/slice_%03d.png", "--threshold", "0.5"])
     print(cmd)
     os.system(cmd)
 
