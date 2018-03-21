@@ -10,6 +10,7 @@ def main(args=None):
     parser.add_argument('input_vdb', type=str, help='input vdb filename')
     parser.add_argument('input_binary', type=str, help='input binary filename')
     parser.add_argument('weight', type=float, help='The relative weight of accuracy term to the simplicity term [0, 1].')
+    parser.add_argument('algorithm', type=int, help='Algorithm: 1 - All, 2 - DP')
     parser.add_argument('output', type=str, help='output ply filename')
     #parser.add_argument('-t', '--threshold', type=float, help='threshold')
     args = parser.parse_args(args)
@@ -32,7 +33,7 @@ def main(args=None):
     print(cmd)
     os.system(cmd)
 
-    cmd = " ".join(["./" + args.input_binary, slices_folder + "/slice_001.png", str(args.weight), args.output])
+    cmd = " ".join(["./" + args.input_binary, slices_folder + "/slice_001.png", str(args.weight), str(args.algorithm), args.output])
     #cmd = " ".join(["./" + args.input_binary, slices_folder + "/slice_000.png"])
     print(cmd)
     os.system(cmd)
