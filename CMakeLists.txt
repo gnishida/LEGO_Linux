@@ -19,6 +19,7 @@ add_executable(LEGO_Linux
 	simp/DPSimplification.cpp
 	simp/RightAngleSimplification.cpp
 	simp/CurveSimplification.cpp
+	simp/CurveRightAngleSimplification.cpp
 )
 
 target_link_libraries(LEGO_Linux ${OpenCV_LIBS} Qt5::Core)

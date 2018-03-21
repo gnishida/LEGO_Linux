@@ -6,8 +6,8 @@
 #include "util/PlyWriter.h"
 
 int main(int argc, const char* argv[]) {
-	if (argc < 4) {
-		std::cerr << "Usage: " << argv[0] << " <slice image filename> <weight [0-1]> <output filename>" << std::endl;
+	if (argc < 5) {
+		std::cerr << "Usage: " << argv[0] << " <slice image filename> <weight [0-1]> <algorithm option: 1 - ALl, 2 - DP> <output filename>" << std::endl;
 		return -1;
 	}
 
@@ -45,8 +45,14 @@ int main(int argc, const char* argv[]) {
 
 	std::vector<std::shared_ptr<util::BuildingLayer>> raw_buildings = util::DisjointVoxelData::disjoint(voxel_data);
 
-	std::vector<std::shared_ptr<util::BuildingLayer>> buildings = simp::BuildingSimplification::simplifyBuildings(raw_buildings, simp::BuildingSimplification::ALG_ALL, alpha, 0.5, 2, 4, 1);
-	util::ply::PlyWriter::write(argv[3], buildings);
+	std::vector<std::shared_ptr<util::BuildingLayer>> buildings;
+	if (std::stoi(argv[3]) == 1) {
+		buildings = simp::BuildingSimplification::simplifyBuildings(raw_buildings, simp::BuildingSimplification::ALG_ALL, alpha, 0.5, 2, 4, 1);
+	}
+	else if (std::stoi(argv[3]) == 2) {
+		buildings = simp::BuildingSimplification::simplifyBuildings(raw_buildings, simp::BuildingSimplification::ALG_DP, alpha, 0.5, 2, 4, 1);
+	}
+	util::ply::PlyWriter::write(argv[4], buildings);
 
 	std::cout << buildings.size() << " buildings are generated." << std::endl;
 
