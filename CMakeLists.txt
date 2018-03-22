@@ -9,7 +9,7 @@ find_package(CGAL REQUIRED COMPONENTS Core)
 include_directories(${OpenCV_INCLUDE_DIRS})
 include(${CGAL_USE_FILE})
 
-add_executable(LEGO_Linux
+add_executable(lego-cgv-modelling
 	main.cpp
 	util/BuildingLayer.cpp
 	util/ContourUtils.cpp
@@ -22,6 +22,6 @@ add_executable(LEGO_Linux
 	simp/CurveRightAngleSimplification.cpp
 )
 
-target_link_libraries(LEGO_Linux ${OpenCV_LIBS} Qt5::Core)
+target_link_libraries(lego-cgv-modelling ${OpenCV_LIBS} Qt5::Core)
 
 set (CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
