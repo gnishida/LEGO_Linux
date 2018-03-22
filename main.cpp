@@ -6,8 +6,8 @@
 #include "util/PlyWriter.h"
 
 int main(int argc, const char* argv[]) {
-	if (argc < 5) {
-		std::cerr << "Usage: " << argv[0] << " <slice image filename> <weight [0-1]> <algorithm option: 1 - All, 2 - DP> <output filename>" << std::endl;
+	if (argc < 9) {
+		std::cerr << "Usage: " << argv[0] << " <slice image filename> <weight [0-1]> <algorithm option: 1 - All, 2 - DP> <offset_x> <offset_y> <offset_z> <scale> <output filename>" << std::endl;
 		return -1;
 	}
 
@@ -52,7 +52,7 @@ int main(int argc, const char* argv[]) {
 	else if (std::stoi(argv[3]) == 2) {
 		buildings = simp::BuildingSimplification::simplifyBuildings(raw_buildings, simp::BuildingSimplification::ALG_DP, alpha, 0.5, 2, 4, 1);
 	}
-	util::ply::PlyWriter::write(argv[4], buildings);
+	util::ply::PlyWriter::write(argv[8], std::stod(argv[4]), std::stod(argv[5]), std::stod(argv[6]), std::stod(argv[7]), buildings);
 
 	std::cout << buildings.size() << " buildings are generated." << std::endl;
 
