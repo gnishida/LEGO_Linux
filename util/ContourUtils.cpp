@@ -73,6 +73,8 @@ namespace util {
 		this->theta_end = theta_end;
 		this->center = center;
 		this->radius = radius;
+		if (std::isnan(theta_start) || std::isnan(theta_end) || std::isnan(radius)) throw "Invalid angle or radius";
+		if (theta_start == theta_end) throw "Two angles have to be different";
 	}
 
 	boost::shared_ptr<PrimitiveShape> PrimitiveCurve::clone() const {
@@ -82,18 +84,29 @@ namespace util {
 
 	std::vector<cv::Point2f> PrimitiveCurve::getActualPoints() const {
 		float angle_start_end = this->theta_end - this->theta_start;
+
 		float angle_between = 5;
-		int num_points = abs(angle_start_end / 5);
+		int num_points = std::ceil(abs(angle_start_end / 5));
 		angle_between = angle_start_end / num_points;
 		num_points = num_points + 1;
 		std::vector<cv::Point2f> ans(num_points);
-		for (int k = 0; k < num_points; k++){
+		for (int k = 0; k < num_points - 1; k++) {
 			double x = abs(this->radius) * cos(CV_PI * (this->theta_start + angle_between * k) / 180) + this->center.x;
 			double y = abs(this->radius) * sin(CV_PI * (this->theta_start + angle_between * k) / 180) + this->center.y;
 			cv::Mat_<float> p = (cv::Mat_<float>(3, 1) << x, y, 1);
 			cv::Mat_<float> q = mat * p;
 			ans[k] = cv::Point2f(q(0, 0), q(1, 0));
 		}
+
+		// for the last point
+		{
+			double x = abs(this->radius) * cos(CV_PI * (this->theta_end) / 180) + this->center.x;
+			double y = abs(this->radius) * sin(CV_PI * (this->theta_end) / 180) + this->center.y;
+			cv::Mat_<float> p = (cv::Mat_<float>(3, 1) << x, y, 1);
+			cv::Mat_<float> q = mat * p;
+			ans.back() = cv::Point2f(q(0, 0), q(1, 0));
+		}
+
 		return ans;
 	}
 
