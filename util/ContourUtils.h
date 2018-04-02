@@ -148,6 +148,7 @@ namespace util {
 	bool isSimple(const Ring& points);
 	std::vector<cv::Point> removeRedundantPoint(const std::vector<cv::Point>& polygon);
 	std::vector<cv::Point2f> removeRedundantPoint(const std::vector<cv::Point2f>& polygon);
+	Ring resolveSelfIntersection(const Ring& ring);
 
 	cv::Rect boundingBox(const std::vector<cv::Point>& polygon);
 	cv::Rect boundingBox(const std::vector<cv::Point2f>& polygon);
@@ -157,13 +158,16 @@ namespace util {
 	double calculateIOU(const cv::Mat_<uchar>& img1, const cv::Mat_<uchar>& img2, const cv::Rect& rect);
 	double calculateIOU(const Polygon& polygon1, const Polygon& polygon2);
 	double calculateIOU(const std::vector<cv::Point2f>& polygon1, const std::vector<cv::Point2f>& polygon2);
+	double calculateIOU(const std::vector<Polygon>& polygons1, const std::vector<Polygon>& polygons2);
 	double calculateArea(const Polygon& polygon);
 	double calculateArea(const cv::Mat_<uchar>& img);
 	std::vector<Polygon> findContours(const cv::Mat_<uchar>& img, bool add_right_corner);
 	Ring addCornerToOpenCVContour(const std::vector<cv::Point>& polygon, const cv::Mat_<uchar>& img);
 	void findContour(const cv::Mat_<uchar>& img, std::vector<cv::Point>& contour);
-	void createImageFromContour(int width, int height, const std::vector<cv::Point>& contour, const cv::Point& offset, cv::Mat_<uchar>& result);
+	void createImageFromContour(int width, int height, const std::vector<cv::Point>& contour, const cv::Point& offset, cv::Mat_<uchar>& result, bool erode = true);
 	void createImageFromPolygon(int width, int height, const Polygon& polygon, const cv::Point& offset, cv::Mat_<uchar>& result);
+
+	void approxPolyDP(const std::vector<cv::Point2f>& input_polygon, std::vector<cv::Point2f>& output_polygon, double epsilon, bool closed, bool allowLessThanThreePoints);
 
 	void snapPolygon(const std::vector<cv::Point2f>& ref_polygon, std::vector<cv::Point2f>& polygon, float snap_vertex_threshold, float snap_edge_threshold);
 	float dotProduct(const cv::Point2f& v1, const cv::Point2f& v2);

@@ -16,7 +16,6 @@ namespace simp {
 
 	public:
 		static std::vector<std::shared_ptr<util::BuildingLayer>> simplifyBuildings(const std::vector<std::shared_ptr<util::BuildingLayer>>& raw_buildings, int algorithm, bool record_stats, float alpha, float layering_threshold, float epsilon, int resolution, float curve_threshold, float angle_threshold);
-		static std::vector<float> sumCost(const std::vector<std::shared_ptr<util::BuildingLayer>>& buildings);
 
 	private:
 		static std::shared_ptr<util::BuildingLayer> simplifyBuildingByAll(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, float angle, int dx, int dy, std::vector<std::tuple<float, long long, int>>& records);
@@ -25,7 +24,7 @@ namespace simp {
 		static std::shared_ptr<util::BuildingLayer> simplifyBuildingByCurve(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, float epsilon, float curve_threshold);
 		static std::shared_ptr<util::BuildingLayer> simplifyBuildingByCurveRightAngle(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, float epsilon, float curve_threshold, float angle_threshold);
 
-		static std::vector<float> calculateCost(const util::Polygon& polygon, std::shared_ptr<util::BuildingLayer> layer);
+		static std::vector<float> calculateCost(const util::Polygon& simplified_polygon, const util::Polygon& polygon, int height);
 	};
 
 }
