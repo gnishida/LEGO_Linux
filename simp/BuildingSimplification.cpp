@@ -90,6 +90,32 @@ namespace simp {
 			float best_error = 0.0f;
 			int best_num_primitive_shapes = 0;
 
+			// try right angle
+			try {
+				int resolution;
+				if (alpha <= 0.06) resolution = 24;
+				else if (alpha < 0.1) resolution = 18;
+				else if (alpha < 0.2) resolution = 12;
+				else if (alpha < 0.4) resolution = 10;
+				else if (alpha < 0.6) resolution = 8;
+				else if (alpha < 0.8) resolution = 4;
+				else if (alpha < 0.9) resolution = 4;
+				else resolution = 2;
+
+				util::Polygon simplified_polygon = RightAngleSimplification::simplify(contours[i], resolution, angle, dx, dy);
+				std::vector<float> costs = calculateCost(simplified_polygon, contours[i], layer->top_height - layer->bottom_height);
+				float cost = alpha * costs[0] / costs[1] + (1 - alpha) * costs[2] / baseline_costs[2];
+				if (cost < best_cost) {
+					best_algorithm = ALG_RIGHTANGLE;
+					best_cost = cost;
+					best_simplified_polygon = simplified_polygon;
+
+					best_error = costs[0] / costs[1];
+					best_num_primitive_shapes = costs[2];
+				}
+			}
+			catch (...) {}
+
 			// try Douglas-Peucker
 			try {
 				float epsilon;
@@ -109,32 +135,6 @@ namespace simp {
 				if (cost < best_cost) {
 					best_algorithm = ALG_DP;
 					right_angle_for_all_contours = false;
-					best_cost = cost;
-					best_simplified_polygon = simplified_polygon;
-
-					best_error = costs[0] / costs[1];
-					best_num_primitive_shapes = costs[2];
-				}
-			}
-			catch (...) {}
-
-			// try right angle
-			try {
-				int resolution;
-				if (alpha <= 0.06) resolution = 24;
-				else if (alpha < 0.1) resolution = 18;
-				else if (alpha < 0.2) resolution = 12;
-				else if (alpha < 0.4) resolution = 10;
-				else if (alpha < 0.6) resolution = 8;
-				else if (alpha < 0.8) resolution = 4;
-				else if (alpha < 0.9) resolution = 4;
-				else resolution = 2;
-
-				util::Polygon simplified_polygon = RightAngleSimplification::simplify(contours[i], resolution, angle, dx, dy);
-				std::vector<float> costs = calculateCost(simplified_polygon, contours[i], layer->top_height - layer->bottom_height);
-				float cost = alpha * costs[0] / costs[1] + (1 - alpha) * costs[2] / baseline_costs[2];
-				if (cost < best_cost) {
-					best_algorithm = ALG_RIGHTANGLE;
 					best_cost = cost;
 					best_simplified_polygon = simplified_polygon;
 
