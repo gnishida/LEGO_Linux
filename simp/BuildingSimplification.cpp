@@ -29,20 +29,19 @@ namespace simp {
 					building = simplifyBuildingByAll(i, util::DisjointVoxelData::layering(raw_buildings[i], layering_threshold), alpha, angle, dx, dy, records);
 				}
 				else if (algorithm == ALG_DP) {
-					std::shared_ptr<util::BuildingLayer> layer = util::DisjointVoxelData::layering(raw_buildings[i], layering_threshold);
-					building = simplifyBuildingByDP(i, layer, alpha, epsilon);
+					building = simplifyBuildingByDP(i, util::DisjointVoxelData::layering(raw_buildings[i], layering_threshold), alpha, epsilon, records);
 				}
 				else if (algorithm == ALG_RIGHTANGLE) {
 					float angle = -1;
 					int dx = -1;
 					int dy = -1;
-					building = simplifyBuildingByRightAngle(i, util::DisjointVoxelData::layering(raw_buildings[i], layering_threshold), alpha, resolution, angle, dx, dy);
+					building = simplifyBuildingByRightAngle(i, util::DisjointVoxelData::layering(raw_buildings[i], layering_threshold), alpha, resolution, angle, dx, dy, records);
 				}
 				else if (algorithm == ALG_CURVE) {
-					building = simplifyBuildingByCurve(i, util::DisjointVoxelData::layering(raw_buildings[i], layering_threshold), alpha, epsilon, curve_threshold);
+					building = simplifyBuildingByCurve(i, util::DisjointVoxelData::layering(raw_buildings[i], layering_threshold), alpha, epsilon, curve_threshold, records);
 				}
 				else if (algorithm == ALG_CURVE_RIGHTANGLE) {
-					building = simplifyBuildingByCurveRightAngle(i, util::DisjointVoxelData::layering(raw_buildings[i], layering_threshold), alpha, epsilon, curve_threshold, angle_threshold);
+					building = simplifyBuildingByCurveRightAngle(i, util::DisjointVoxelData::layering(raw_buildings[i], layering_threshold), alpha, epsilon, curve_threshold, angle_threshold, records);
 				}
 
 				buildings.push_back(building);
@@ -82,6 +81,7 @@ namespace simp {
 		}
 		
 		std::vector<util::Polygon> best_simplified_polygons;
+		bool right_angle_for_all_contours = true;
 		for (int i = 0; i < contours.size(); i++) {
 			util::Polygon best_simplified_polygon;
 
@@ -93,12 +93,14 @@ namespace simp {
 			// try Douglas-Peucker
 			try {
 				float epsilon;
-				if (alpha == 0.0) epsilon = 18;
+				if (alpha <= 0.06) epsilon = 24;
+				else if (alpha < 0.1) epsilon = 18;
 				else if (alpha < 0.2) epsilon = 12;
 				else if (alpha < 0.4) epsilon = 10;
 				else if (alpha < 0.6) epsilon = 8;
 				else if (alpha < 0.8) epsilon = 4;
-				else epsilon = 4;
+				else if (alpha < 0.9) epsilon = 4;
+				else epsilon = 2;
 
 				util::Polygon simplified_polygon = DPSimplification::simplify(contours[i], epsilon);
 				std::vector<float> costs = calculateCost(simplified_polygon, contours[i], layer->top_height - layer->bottom_height);
@@ -106,6 +108,7 @@ namespace simp {
 
 				if (cost < best_cost) {
 					best_algorithm = ALG_DP;
+					right_angle_for_all_contours = false;
 					best_cost = cost;
 					best_simplified_polygon = simplified_polygon;
 
@@ -118,12 +121,14 @@ namespace simp {
 			// try right angle
 			try {
 				int resolution;
-				if (alpha == 0.0) resolution = 18;
+				if (alpha <= 0.06) resolution = 24;
+				else if (alpha < 0.1) resolution = 18;
 				else if (alpha < 0.2) resolution = 12;
 				else if (alpha < 0.4) resolution = 10;
 				else if (alpha < 0.6) resolution = 8;
 				else if (alpha < 0.8) resolution = 4;
-				else resolution = 4;
+				else if (alpha < 0.9) resolution = 4;
+				else resolution = 2;
 
 				util::Polygon simplified_polygon = RightAngleSimplification::simplify(contours[i], resolution, angle, dx, dy);
 				std::vector<float> costs = calculateCost(simplified_polygon, contours[i], layer->top_height - layer->bottom_height);
@@ -142,12 +147,14 @@ namespace simp {
 			// try curve
 			try {
 				float epsilon;
-				if (alpha == 0.0) epsilon = 18;
+				if (alpha <= 0.06) epsilon = 24;
+				else if (alpha < 0.1) epsilon = 18;
 				else if (alpha < 0.2) epsilon = 12;
 				else if (alpha < 0.4) epsilon = 10;
 				else if (alpha < 0.6) epsilon = 8;
 				else if (alpha < 0.8) epsilon = 4;
-				else epsilon = 4;
+				else if (alpha < 0.9) epsilon = 4;
+				else epsilon = 2;
 
 				float curve_threshold;
 				if (alpha < 0.2) curve_threshold = 1.5f;
@@ -159,6 +166,7 @@ namespace simp {
 
 				if (cost < best_cost) {
 					best_algorithm = ALG_CURVE;
+					right_angle_for_all_contours = false;
 					best_cost = cost;
 					best_simplified_polygon = simplified_polygon;
 
@@ -171,12 +179,14 @@ namespace simp {
 			// try curve + right angle
 			try {
 				float epsilon;
-				if (alpha == 0.0) epsilon = 18;
-				else if (alpha < 0.2) epsilon = 162;
+				if (alpha <= 0.06) epsilon = 24;
+				else if (alpha < 0.1) epsilon = 18;
+				else if (alpha < 0.2) epsilon = 12;
 				else if (alpha < 0.4) epsilon = 10;
 				else if (alpha < 0.6) epsilon = 8;
 				else if (alpha < 0.8) epsilon = 4;
-				else epsilon = 4;
+				else if (alpha < 0.9) epsilon = 4;
+				else epsilon = 2;
 
 				float curve_threshold;
 				if (alpha < 0.2) curve_threshold = 1.5f;
@@ -190,6 +200,7 @@ namespace simp {
 
 				if (cost < best_cost) {
 					best_algorithm = ALG_CURVE;
+					right_angle_for_all_contours = false;
 					best_cost = cost;
 					best_simplified_polygon = simplified_polygon;
 
@@ -209,7 +220,22 @@ namespace simp {
 
 		if (layer->child) {
 			try {
-				std::shared_ptr<util::BuildingLayer> child = simplifyBuildingByAll(building_id, layer->child, alpha, -1, -1, -1, records);
+				float contour_area = 0;
+				for (int i = 0; i < contours.size(); i++) {
+					contour_area += util::calculateArea(contours[i]);
+				}
+
+				float next_contour_area = 0;
+				for (int i = 0; i < layer->child->raw_footprints[0].size(); i++) {
+					next_contour_area += util::calculateArea(layer->child->raw_footprints[0][i]);
+				}
+
+				if (!right_angle_for_all_contours || next_contour_area > contour_area) {
+					angle = -1;
+					dx = -1;
+					dy = -1;
+				}
+				std::shared_ptr<util::BuildingLayer> child = simplifyBuildingByAll(building_id, layer->child, alpha, angle, dx, dy, records);
 				building->child = child;
 			}
 			catch (...) {
@@ -226,14 +252,29 @@ namespace simp {
 	 * @param epsilon	simplification level
 	 * @return			simplified building shape
 	 */
-	std::shared_ptr<util::BuildingLayer> BuildingSimplification::simplifyBuildingByDP(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, float epsilon) {
+	std::shared_ptr<util::BuildingLayer> BuildingSimplification::simplifyBuildingByDP(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, float epsilon, std::vector<std::tuple<float, long long, int>>& records) {
 		std::vector<util::Polygon> contours = layer->selectRepresentativeContours();
+
+		// get baseline cost
+		std::vector<util::Polygon> baseline_polygons;
+		std::vector<float> baseline_costs(3, 0);
+		for (int i = 0; i < contours.size(); i++) {
+			baseline_polygons.push_back(DPSimplification::simplify(contours[i], 0.5));
+			std::vector<float> costs = calculateCost(baseline_polygons[i], contours[i], layer->top_height - layer->bottom_height);
+			for (int j = 0; j < 3; j++) {
+				baseline_costs[j] += costs[j];
+			}
+		}
 
 		// simplify the polygon
 		std::vector<util::Polygon> simplified_polygons;
 		for (int i = 0; i < contours.size(); i++) {
 			try {
-				simplified_polygons.push_back(DPSimplification::simplify(contours[i], epsilon));
+				util::Polygon simplified_polygon = DPSimplification::simplify(contours[i], epsilon);
+				simplified_polygons.push_back(simplified_polygon);
+				std::vector<float> costs = calculateCost(simplified_polygon, contours[i], layer->top_height - layer->bottom_height);
+				float cost = alpha * costs[0] / costs[1] + (1 - alpha) * costs[2] / baseline_costs[2];
+				records.push_back(std::make_tuple(costs[0] / costs[1], costs[2], ALG_DP));
 			}
 			catch (...) {}
 		}
@@ -243,7 +284,7 @@ namespace simp {
 
 		if (layer->child) {
 			try {
-				std::shared_ptr<util::BuildingLayer> child = simplifyBuildingByDP(building_id, layer->child, alpha, epsilon);
+				std::shared_ptr<util::BuildingLayer> child = simplifyBuildingByDP(building_id, layer->child, alpha, epsilon, records);
 				building->child = child;
 			}
 			catch (...) {
@@ -260,12 +301,28 @@ namespace simp {
 	 * @param resolution	simplification level
 	 * @return				simplified building shape
 	 */
-	std::shared_ptr<util::BuildingLayer> BuildingSimplification::simplifyBuildingByRightAngle(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, int resolution, float angle, int dx, int dy) {
+	std::shared_ptr<util::BuildingLayer> BuildingSimplification::simplifyBuildingByRightAngle(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, int resolution, float angle, int dx, int dy, std::vector<std::tuple<float, long long, int>>& records) {
 		std::vector<util::Polygon> contours = layer->selectRepresentativeContours();
+
+		// get baseline cost
+		std::vector<util::Polygon> baseline_polygons;
+		std::vector<float> baseline_costs(3, 0);
+		for (int i = 0; i < contours.size(); i++) {
+			baseline_polygons.push_back(DPSimplification::simplify(contours[i], 0.5));
+			std::vector<float> costs = calculateCost(baseline_polygons[i], contours[i], layer->top_height - layer->bottom_height);
+			for (int j = 0; j < 3; j++) {
+				baseline_costs[j] += costs[j];
+			}
+		}
+
 		std::vector<util::Polygon> simplified_polygons;
 		for (int i = 0; i < contours.size(); i++) {
 			try {
-				simplified_polygons.push_back(RightAngleSimplification::simplify(contours[i], resolution, angle, dx, dy));
+				util::Polygon simplified_polygon = RightAngleSimplification::simplify(contours[i], resolution, angle, dx, dy);
+				simplified_polygons.push_back(simplified_polygon);
+				std::vector<float> costs = calculateCost(simplified_polygon, contours[i], layer->top_height - layer->bottom_height);
+				float cost = alpha * costs[0] / costs[1] + (1 - alpha) * costs[2] / baseline_costs[2];
+				records.push_back(std::make_tuple(costs[0] / costs[1], costs[2], ALG_RIGHTANGLE));
 			}
 			catch (...) {}
 		}
@@ -275,7 +332,7 @@ namespace simp {
 
 		if (layer->child) {
 			try {
-				std::shared_ptr<util::BuildingLayer> child = simplifyBuildingByRightAngle(building_id, layer->child, alpha, resolution, angle, dx, dy);
+				std::shared_ptr<util::BuildingLayer> child = simplifyBuildingByRightAngle(building_id, layer->child, alpha, resolution, angle, dx, dy, records);
 				building->child = child;
 			}
 			catch (...) {
@@ -285,12 +342,28 @@ namespace simp {
 		return building;
 	}
 
-	std::shared_ptr<util::BuildingLayer> BuildingSimplification::simplifyBuildingByCurve(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, float epsilon, float curve_threshold) {
+	std::shared_ptr<util::BuildingLayer> BuildingSimplification::simplifyBuildingByCurve(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, float epsilon, float curve_threshold, std::vector<std::tuple<float, long long, int>>& records) {
 		std::vector<util::Polygon> contours = layer->selectRepresentativeContours();
+
+		// get baseline cost
+		std::vector<util::Polygon> baseline_polygons;
+		std::vector<float> baseline_costs(3, 0);
+		for (int i = 0; i < contours.size(); i++) {
+			baseline_polygons.push_back(DPSimplification::simplify(contours[i], 0.5));
+			std::vector<float> costs = calculateCost(baseline_polygons[i], contours[i], layer->top_height - layer->bottom_height);
+			for (int j = 0; j < 3; j++) {
+				baseline_costs[j] += costs[j];
+			}
+		}
+
 		std::vector<util::Polygon> simplified_polygons;
 		for (int i = 0; i < contours.size(); i++) {
 			try {
-				simplified_polygons.push_back(CurveSimplification::simplify(contours[i], epsilon, curve_threshold));
+				util::Polygon simplified_polygon = CurveSimplification::simplify(contours[i], epsilon, curve_threshold);
+				simplified_polygons.push_back(simplified_polygon);
+				std::vector<float> costs = calculateCost(simplified_polygon, contours[i], layer->top_height - layer->bottom_height);
+				float cost = alpha * costs[0] / costs[1] + (1 - alpha) * costs[2] / baseline_costs[2];
+				records.push_back(std::make_tuple(costs[0] / costs[1], costs[2], ALG_CURVE));
 			}
 			catch (...) {}
 		}
@@ -300,7 +373,7 @@ namespace simp {
 
 		if (layer->child) {
 			try {
-				std::shared_ptr<util::BuildingLayer> child = simplifyBuildingByCurve(building_id, layer->child, alpha, epsilon, curve_threshold);
+				std::shared_ptr<util::BuildingLayer> child = simplifyBuildingByCurve(building_id, layer->child, alpha, epsilon, curve_threshold, records);
 				building->child = child;
 			}
 			catch (...) {
@@ -310,12 +383,28 @@ namespace simp {
 		return building;
 	}
 
-	std::shared_ptr<util::BuildingLayer> BuildingSimplification::simplifyBuildingByCurveRightAngle(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, float epsilon, float curve_threshold, float angle_threshold) {
+	std::shared_ptr<util::BuildingLayer> BuildingSimplification::simplifyBuildingByCurveRightAngle(int building_id, std::shared_ptr<util::BuildingLayer> layer, float alpha, float epsilon, float curve_threshold, float angle_threshold, std::vector<std::tuple<float, long long, int>>& records) {
 		std::vector<util::Polygon> contours = layer->selectRepresentativeContours();
+
+		// get baseline cost
+		std::vector<util::Polygon> baseline_polygons;
+		std::vector<float> baseline_costs(3, 0);
+		for (int i = 0; i < contours.size(); i++) {
+			baseline_polygons.push_back(DPSimplification::simplify(contours[i], 0.5));
+			std::vector<float> costs = calculateCost(baseline_polygons[i], contours[i], layer->top_height - layer->bottom_height);
+			for (int j = 0; j < 3; j++) {
+				baseline_costs[j] += costs[j];
+			}
+		}
+
 		std::vector<util::Polygon> simplified_polygons;
 		for (int i = 0; i < contours.size(); i++) {
 			try {
-				simplified_polygons.push_back(CurveRightAngleSimplification::simplify(contours[i], epsilon, curve_threshold, angle_threshold));
+				util::Polygon simplified_polygon = CurveRightAngleSimplification::simplify(contours[i], epsilon, curve_threshold, angle_threshold);
+				simplified_polygons.push_back(simplified_polygon);
+				std::vector<float> costs = calculateCost(simplified_polygon, contours[i], layer->top_height - layer->bottom_height);
+				float cost = alpha * costs[0] / costs[1] + (1 - alpha) * costs[2] / baseline_costs[2];
+				records.push_back(std::make_tuple(costs[0] / costs[1], costs[2], ALG_CURVE));
 			}
 			catch (...) {}
 		}
@@ -325,7 +414,7 @@ namespace simp {
 
 		if (layer->child) {
 			try {
-				std::shared_ptr<util::BuildingLayer> child = simplifyBuildingByCurveRightAngle(building_id, layer->child, alpha, epsilon, curve_threshold, angle_threshold);
+				std::shared_ptr<util::BuildingLayer> child = simplifyBuildingByCurveRightAngle(building_id, layer->child, alpha, epsilon, curve_threshold, angle_threshold, records);
 				building->child = child;
 			}
 			catch (...) {
@@ -350,10 +439,17 @@ namespace simp {
 		// calculate IOU
 		float slice_area = util::calculateArea(polygon);
 		float iou = util::calculateIOU(simplified_polygon, polygon);
-		ans[0] = (1 - iou) * slice_area * height * 0.5;
+		ans[0] = (1 - iou) * slice_area * height * 0.1;
 		ans[1] = slice_area * height;
 		
-		ans[2] = simplified_polygon.primitive_shapes.size();
+		// calculate weighted #primitive shapes (rectangle = 0.5, curve = 0.75, triangle = 1.0)
+		ans[2] = 0;
+		for (auto shape : simplified_polygon.primitive_shapes) {
+			if (shape->type() == util::PrimitiveShape::TYPE_RECTANGLE) ans[2] += 0.5;
+			else if (shape->type() == util::PrimitiveShape::TYPE_CURVE) ans[2] += 0.75;
+			else if (shape->type() == util::PrimitiveShape::TYPE_TRIANGLE) ans[2] += 2;
+			else throw "Invalid primive type";
+		}
 
 		return ans;
 	}

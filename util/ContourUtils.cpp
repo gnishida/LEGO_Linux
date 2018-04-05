@@ -38,6 +38,10 @@ namespace util {
 		return ans;
 	}
 
+	int PrimitiveRectangle::type() const {
+		return TYPE_RECTANGLE;
+	}
+
 	PrimitiveTriangle::PrimitiveTriangle(const cv::Mat_<float>& mat) {
 		this->mat = mat;
 	}
@@ -61,6 +65,10 @@ namespace util {
 			ans[i] = cv::Point2f(q(0, 0), q(1, 0));
 		}
 		return ans;
+	}
+
+	int PrimitiveTriangle::type() const {
+		return TYPE_TRIANGLE;
 	}
 
 	PrimitiveCurve::PrimitiveCurve(const cv::Mat_<float>& mat, float theta_start, float theta_end, const cv::Point2f &center, float radius) {
@@ -104,6 +112,10 @@ namespace util {
 		}
 
 		return ans;
+	}
+
+	int PrimitiveCurve::type() const {
+		return TYPE_CURVE;
 	}
 
 	Ring::Ring() {
@@ -911,13 +923,15 @@ namespace util {
 		std::vector<std::vector<cv::Point>> contour_points(1 + polygon.holes.size());
 
 		contour_points[0].resize(polygon.contour.size());
-		for (int i = 0; i < polygon.contour.size(); i++) {
-			contour_points[0][i] = cv::Point((polygon.contour[i].x + offset.x) * 2, (polygon.contour[i].y + offset.y) * 2);
+		Ring ring = polygon.contour.getActualPoints();
+		for (int i = 0; i < ring.size(); i++) {
+			contour_points[0][i] = cv::Point((ring[i].x + offset.x) * 2, (ring[i].y + offset.y) * 2);
 		}
 		for (int i = 0; i < polygon.holes.size(); i++) {
 			contour_points[i + 1].resize(polygon.holes[i].size());
-			for (int j = 0; j < polygon.holes[i].size(); j++) {
-				contour_points[i + 1][j] = cv::Point((polygon.holes[i][j].x + offset.x) * 2, (polygon.holes[i][j].y + offset.y) * 2);
+			Ring hole = polygon.holes[i].getActualPoints();
+			for (int j = 0; j < hole.size(); j++) {
+				contour_points[i + 1][j] = cv::Point((hole[j].x + offset.x) * 2, (hole[j].y + offset.y) * 2);
 			}
 		}
 		cv::fillPoly(result, contour_points, cv::Scalar(255), cv::LINE_4);
@@ -934,28 +948,15 @@ namespace util {
 	 * This function uses the OpenCV DP function, but if the resultant polygon is self-intersecting,
 	 * it resolves the self-intersecting using an image-based approach.
 	 */
-	void approxPolyDP(const std::vector<cv::Point2f>& input_polygon, std::vector<cv::Point2f>& output_polygon, double epsilon, bool closed, bool allowLessThanThreePoints) {
+	void approxPolyDP(const std::vector<cv::Point2f>& input_polygon, std::vector<cv::Point2f>& output_polygon, double epsilon, bool closed) {
 		cv::approxPolyDP(input_polygon, output_polygon, epsilon, true);
-		if (output_polygon.size() < 3 && !allowLessThanThreePoints) {
-			// If the simplification makes the polygon a line, gradually increase the epsilon 
-			// until it becomes a polygon with at least 3 vertices.
-			float epsilon2 = epsilon - 0.3;
-			while (epsilon2 >= 0 && output_polygon.size() < 3) {
-				cv::approxPolyDP(input_polygon, output_polygon, epsilon2, true);
-				epsilon2 -= 0.3;
-			}
-			if (output_polygon.size() < 3) output_polygon = input_polygon;
-		}
 		
 		// If the polygon is self-intersecting, resolve it.
 		while (!util::isSimple(output_polygon)) {
 			util::Ring ring = resolveSelfIntersection(output_polygon);
 			cv::approxPolyDP(ring.points, output_polygon, 1, closed);
 
-			if (output_polygon.size() < 3 && !allowLessThanThreePoints) {
-				output_polygon = input_polygon;
-				break;
-			}
+			if (output_polygon.size() < 3) break;
 		}
 	}
 

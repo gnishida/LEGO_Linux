@@ -39,13 +39,15 @@ int main(int argc, const char* argv[]) {
 	}
 
 	// determine the layering threshold based on the weight ratio
-	float threshold;
-	if (alpha < 0.2) threshold = 0.3;
+	float threshold = 0.01;
+	if (alpha < 0.1) threshold = 0.1;
+	else if (alpha < 0.2) threshold = 0.3;
 	else if (alpha < 0.3) threshold = 0.4;
 	else if (alpha < 0.4) threshold = 0.5;
 	else if (alpha < 0.5) threshold = 0.6;
 	else if (alpha < 0.7) threshold = 0.6;
-	else threshold = 0.7;
+	else if (alpha < 0.9) threshold = 0.7;
+	else threshold = 0.99;
 
 	time_t start = clock();
 	std::vector<std::shared_ptr<util::BuildingLayer>> raw_buildings = util::DisjointVoxelData::disjoint(voxel_data);
