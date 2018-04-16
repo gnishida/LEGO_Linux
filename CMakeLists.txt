@@ -15,6 +15,7 @@ add_executable(lego-cgv-modelling
 	util/ContourUtils.cpp
 	util/DisjointVoxelData.cpp
 	util/PlyWriter.cpp
+	util/OBJWriter.cpp
 	simp/BuildingSimplification.cpp
 	simp/DPSimplification.cpp
 	simp/RightAngleSimplification.cpp
