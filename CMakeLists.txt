@@ -16,6 +16,7 @@ add_executable(lego-cgv-modelling
 	util/DisjointVoxelData.cpp
 	util/PlyWriter.cpp
 	util/OBJWriter.cpp
+	util/TopFaceWriter.cpp
 	simp/BuildingSimplification.cpp
 	simp/DPSimplification.cpp
 	simp/RightAngleSimplification.cpp
