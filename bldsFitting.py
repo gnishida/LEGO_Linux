@@ -15,7 +15,8 @@ def main(args=None):
     parser.add_argument('offset_y', type=float, help='offset y')
     parser.add_argument('offset_z', type=float, help='offset z')
     parser.add_argument('scale', type=float, help='scale')
-    parser.add_argument('output', type=str, help='output ply filename')
+    parser.add_argument('output_obj', type=str, help='output obj filename')
+    parser.add_argument('output_topface', type=str, help='output topface filename')
     #parser.add_argument('-t', '--threshold', type=float, help='threshold')
     args = parser.parse_args(args)
 
@@ -37,7 +38,7 @@ def main(args=None):
     print(cmd)
     os.system(cmd)
 
-    cmd = " ".join(["./" + args.input_binary, slices_folder + "/slice_001.png", str(args.weight), str(args.algorithm), str(args.offset_x), str(args.offset_y), str(args.offset_z), str(args.scale), args.output])
+    cmd = " ".join(["./" + args.input_binary, slices_folder + "/slice_001.png", str(args.weight), str(args.algorithm), str(args.offset_x), str(args.offset_y), str(args.offset_z), str(args.scale), args.output_obj, args.output_topface])
     #cmd = " ".join(["./" + args.input_binary, slices_folder + "/slice_000.png"])
     print(cmd)
     os.system(cmd)
