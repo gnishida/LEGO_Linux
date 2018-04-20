@@ -266,15 +266,9 @@ namespace util {
 			for (auto& footprint : building->footprints) {
 				std::vector<std::vector<cv::Point2f>> polygons;
 
-				if (footprint.holes.size() == 0) {
-					//polygons = tessellate(footprint.contour);
-					polygons.push_back(footprint.contour.getActualPoints().points);
-				}
-				else {					
-					polygons = tessellate(footprint.contour, footprint.holes);
-					for (int i = 0; i < polygons.size(); i++) {
-						util::transform(polygons[i], footprint.mat);
-					}
+				polygons = tessellate(footprint.contour, footprint.holes);
+				for (int i = 0; i < polygons.size(); i++) {
+					util::transform(polygons[i], footprint.mat);
 				}
 
 				for (auto polygon : polygons) {
