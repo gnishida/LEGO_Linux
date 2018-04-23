@@ -14,6 +14,7 @@ add_executable(lego-cgv-modelling
 	util/BuildingLayer.cpp
 	util/ContourUtils.cpp
 	util/DisjointVoxelData.cpp
+	util/VoxelBuilding.cpp
 	util/PlyWriter.cpp
 	util/OBJWriter.cpp
 	util/TopFaceWriter.cpp
