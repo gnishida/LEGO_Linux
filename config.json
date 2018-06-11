@@ -1,15 +1,21 @@
 {
-  "input_slice_filename" : "D:/LEGO/data/data_3/slice_001.png",
-  "output_mesh" : "D:/LEGO/output.obj",
-  "output_top_face" : "D:/LEGO/topface.txt",
-  "offset_x" : 0,
-  "offset_y" : 0,
-  "offset_z" : 0,
+  "do_voxel_model" : false,
+  "input_slice_filename" : "C:/gen/LEGO/run_test/AOI-D4-Jacksonville/BuildingClusters/025/Slices/slice_000000.png",
+  "output_mesh" : "C:/gen/GitHub/LEGO/LEGO_NOGUI/output.obj",
+  "output_top_face" : "C:/gen/GitHub/LEGO/LEGO_NOGUI/topface.txt",
+  "offset_x" : 1.0,
+  "offset_y" : 1.0,
+  "offset_z" : 1.0,
   "scale" : 0.3,
+  "bulk_orientation" : 11.974395751953125,
   "contour_simplification_weight" : 0.5,
-  "contour_snapping_threshold" : 0.7,
+  "contour_snapping_threshold" : 3.0,
   "layering_threshold" : 0.7,
-  "contour_snapping_threshold" : 0.1,
+  "minimum_contour_area" : 2.0,
+  "maximum_obb_ratio" : 10.0,
+  "min_hole_ratio" : 0.02,
+  "allow_triangle_contour" : false,
+  "allow_overhang" : false,
   "contour_simplification_algorithms" : {
     "douglas_peucker" : {
       "use" : false,
@@ -17,18 +23,19 @@
     },
     "right_angle" : {
       "use" : true,
-      "epsilon" : 20
+      "epsilon" : 20,
+	  "optimization" : true
     },
     "curve" : {
-      "use" : true,
+      "use" : false,
       "epsilon" : 16,
       "curve_threshold" : 2
     },
     "curvepp" : {
       "use" : true,
-      "epsilon" : 16,
-      "curve_threshold" : 2,
-      "angle_threshold" : 10
+      "epsilon" : 18,
+      "curve_threshold" : 2.5,
+      "angle_threshold" : 12
     }
   }
 }

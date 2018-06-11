@@ -18,11 +18,14 @@ add_executable(lego-cgv-modelling
 	util/PlyWriter.cpp
 	util/OBJWriter.cpp
 	util/TopFaceWriter.cpp
+	util/PointSetShapeDetection.cpp
+	util/EfficientRansacCurveDetector.cpp
 	simp/BuildingSimplification.cpp
 	simp/DPSimplification.cpp
 	simp/RightAngleSimplification.cpp
 	simp/CurveSimplification.cpp
 	simp/CurveRightAngleSimplification.cpp
+	voxel_model.cpp
 )
 
 target_link_libraries(lego-cgv-modelling ${OpenCV_LIBS} Qt5::Core)

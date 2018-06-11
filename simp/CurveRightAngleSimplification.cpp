@@ -12,11 +12,15 @@ namespace simp {
 	/**
 	* Simplify the footprint of the layer.
 	*
-	* @param slices	slice images of the layer
-	* @param epsilon	simplification parameter
-	* @return			simplified footprint
+	* @param polygon			contour polygon of the layer
+	* @param epsilon			epsilon parameter for DP method
+	* @param curve_threshold	maximum deviation of the point from the arc
+	* @param angle_threshold	maximum angle deviation of the point from the axis aligned line
+	* @param orientation		principle orientation of the contour in radian
+	* @param min_hole_ratio		hole will be removed if its area ratio to the contour is less than this threshold
+	* @return					simplified footprint
 	*/
-	util::Polygon CurveRightAngleSimplification::simplify(const util::Polygon& polygon, float epsilon, float curve_threshold, float angle_threshold, float min_hole_ratio) {
+	util::Polygon CurveRightAngleSimplification::simplify(const util::Polygon& polygon, float epsilon, float curve_threshold, float angle_threshold, float orientation, float min_hole_ratio) {
 		util::Polygon ans;
 		angle_threshold = angle_threshold * 180.0 / CV_PI;
 		// create a slice image from the input polygon
@@ -30,15 +34,14 @@ namespace simp {
 		// tranlsate (bbox.x, bbox.y)
 		polygons[0].translate(bbox.x, bbox.y);
 
-		decomposePolygon(polygons[0], ans, epsilon, curve_threshold, angle_threshold);
+		decomposePolygon(polygons[0], ans, epsilon, curve_threshold, angle_threshold, orientation);
 		if (ans.contour.size() < 3){
 			throw "No building is found.";
 		}
 		return ans;
 	}
 
-	void CurveRightAngleSimplification::decomposePolygon(util::Polygon input, util::Polygon& polygon, float epsilon, float curve_threshold, float angle_threshold) {
-		
+	void CurveRightAngleSimplification::decomposePolygon(util::Polygon input, util::Polygon& polygon, float epsilon, float curve_threshold, float angle_threshold, float orientation) {
 		// check whether it's valid holes
 		bool bValidHoles = false;
 		if (input.holes.size() > 0){
@@ -55,15 +58,16 @@ namespace simp {
 			}
 		}
 		if (input.holes.size() == 0 || !bValidHoles){
-
 			std::vector<cv::Point2f> contour;
 			contour.resize(input.contour.size());
 			for (int i = 0; i < input.contour.size(); i++)
 				contour[i] = input.contour[i];
 			bool bContainCurve = false;
 			util::Polygon output;
-			if (contour.size() > 100){
-				bContainCurve = approxContour(contour, output, epsilon, curve_threshold, angle_threshold);
+			if (contour.size() > 500){
+				bContainCurve = approxContour(contour, output, epsilon, curve_threshold, angle_threshold, orientation);
+				if (output.contour.size() <= 3)
+					bContainCurve = false;
 			}
 			if (bContainCurve)
 			{
@@ -96,12 +100,11 @@ namespace simp {
 				cv::Rect bbox = util::boundingBox(polygon.contour.points);
 				cv::Mat_<uchar> img;
 				util::createImageFromPolygon(bbox.width, bbox.height, polygon, cv::Point2f(-bbox.x, -bbox.y), img);
-				float angle = axis_align(img);
-				angle = 180 - angle;
-
+				float angle = orientation * 180 / CV_PI;
 				cv::Mat_<float> M;
 				polygon.contour.points = transform_angle(polygon.contour.points, M, angle);
-				results_tmp = contour_rectify(polygon.contour.points, angle_threshold);
+				//results_tmp = contour_rectify(polygon.contour.points, angle_threshold, epsilon);
+				results_tmp = contour_rectify_no_curve(polygon.contour.points, angle_threshold, epsilon);
 				// remove redundant_points
 				polygon.contour.points = del_redundant_points(results_tmp);
 				if (!util::isSimple(polygon.contour)){
@@ -141,7 +144,7 @@ namespace simp {
 			util::Polygon output;
 			bool bContainCurve = false;
 			if (contour.size() > 100){
-				bContainCurve = approxContour(contour, output, epsilon, curve_threshold, angle_threshold);
+				bContainCurve = approxContour(contour, output, epsilon, curve_threshold, angle_threshold, orientation);
 			}
 			if (bContainCurve)
 			{
@@ -171,11 +174,11 @@ namespace simp {
 				cv::Rect bbox = util::boundingBox(polygon.contour.points);
 				cv::Mat_<uchar> img;
 				util::createImageFromPolygon(bbox.width, bbox.height, polygon, cv::Point2f(-bbox.x, -bbox.y), img);
-				float angle = axis_align(img);
-				angle = 180 - angle;
+				float angle = orientation * 180 / CV_PI;
 				cv::Mat_<float> M;
 				polygon.contour.points = transform_angle(polygon.contour.points, M, angle);
-				results_tmp = contour_rectify(polygon.contour.points, angle_threshold);
+				//results_tmp = contour_rectify(polygon.contour.points, angle_threshold, epsilon);
+				results_tmp = contour_rectify_no_curve(polygon.contour.points, angle_threshold, epsilon);
 				// remove redundant_points
 				polygon.contour.points = del_redundant_points(results_tmp);
 				if (!util::isSimple(polygon.contour)){
@@ -196,7 +199,7 @@ namespace simp {
 				util::Polygon output;
 				bool bContainCurve = false;
 				if (contour.size() > 100){
-					bContainCurve = approxContour(contour, output, epsilon, curve_threshold, angle_threshold);
+					bContainCurve = approxContour(contour, output, epsilon, curve_threshold, angle_threshold, orientation);
 				}
 				if (bContainCurve)
 				{
@@ -255,7 +258,7 @@ namespace simp {
 		// extract contours
 		std::vector<std::vector<cv::Point>> contours;
 		std::vector<cv::Vec4i> hierarchy;
-		cv::findContours(padded, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_NONE, cv::Point(0, 0));
+		cv::findContours(padded, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
 		for (int i = 0; i < hierarchy.size(); i++) {
 			if (hierarchy[i][3] != -1) continue;
@@ -290,7 +293,7 @@ namespace simp {
 	/**
 	* @return			false:not curve true: curve
 	*/
-	bool CurveRightAngleSimplification::approxContour(std::vector<cv::Point2f>& input, util::Polygon &output, float epsilon, float curve_threshold, float angle_threshold){
+	bool CurveRightAngleSimplification::approxContour(std::vector<cv::Point2f>& input, util::Polygon &output, float epsilon, float curve_threshold, float angle_threshold, float orientation){
 		bool bContainCurve = 0;
 		std::vector<cv::Point2f> clean_contour;
 		std::vector<int> contour_points_type;
@@ -321,10 +324,10 @@ namespace simp {
 			points.clear();
 			init_points = cv::Point3d(20, 20, 10);
 			dis = (int)(percentage * input.size());
-			if (dis < 50 && input.size() > 50)
-				dis = 50;
-			if (dis > 100)
+			if (dis < 100 && input.size() > 100)
 				dis = 100;
+			if (dis > 150)
+				dis = 150;
 			bValid = false;
 			next_p = 1;
 			do{
@@ -339,7 +342,7 @@ namespace simp {
 				if (valid_curve(threshold, points, center, result.z, bbox) && points.size() <= input.size()){
 					bValid = true;
 					next_p = dis;
-					dis++;
+					dis += 5;
 				}
 				else{
 					if (next_p == 1){
@@ -400,14 +403,25 @@ namespace simp {
 		std::vector<cv::Point2f> final_contour;
 		std::vector<int> type_final_contour;
 		std::vector<cv::Point3f> final_contour_curve;
-		int start_init = 0;
+		int start_init_tmp = -1;
 		bool bConcaveCurve = false;
 		for (int i = 0; i < contour_points_type.size(); i++){
 			if (contour_points_type[i] == 1){
-				start_init = i;
+				start_init_tmp = i;
 				break;
 			}
 		}
+		//find the start position of one curve
+		int start_init = -1;
+		for (int i = start_init_tmp; i < start_init_tmp + contour_points_type.size(); i++){
+			if (contour_points_type[i % contour_points_type.size()] == 2){
+				start_init = i % contour_points_type.size();
+				break;
+			}
+		}
+		if (start_init == -1)
+			return false;
+
 		for (int i = start_init; i < start_init + contour_points_type.size();){
 			simplified_curve_tmp.clear();
 			bool bCurve = false;
@@ -474,18 +488,7 @@ namespace simp {
 		}
 		if (bContainCurve){
 			//get maximal direction angle
-			float angle = 0;
-			{
-				std::vector<cv::Point> final_tmp;
-				final_tmp.resize(final_contour.size());
-				for (int i = 0; i < final_contour.size(); i++)
-					final_tmp[i] = cv::Point(final_contour[i].x, final_contour[i].y);
-				cv::Rect bbox = util::boundingBox(final_contour);
-				cv::Mat_<uchar> img;
-				util::createImageFromContour(bbox.width, bbox.height, final_tmp, cv::Point2f(-bbox.x, -bbox.y), img);
-				angle = axis_align(img);
-				angle = 180 - angle;
-			}
+			float angle = orientation * 180 / CV_PI;
 			// transform
 			cv::Mat_<float> M;
 			final_contour = transform_angle(final_contour, M, angle);
@@ -717,7 +720,7 @@ namespace simp {
 				util::approxPolyDP(cv::Mat(output_regular_tmp), output_regular, epsilon, true);
 				std::vector<cv::Point2f> results_tmp;
 				std::vector<cv::Point2f> new_output_contour;
-				results_tmp = contour_rectify(output_regular, angle_threshold);
+				results_tmp = contour_rectify(output_regular, angle_threshold, epsilon);
 				std::vector<cv::Point2f> results = del_redundant_points(results_tmp);
 				if (!util::isSimple(results)){
 					results = results_tmp;
@@ -1263,7 +1266,7 @@ namespace simp {
 		return result;
 	}
 
-	std::vector<cv::Point2f> CurveRightAngleSimplification::contour_rectify(std::vector<cv::Point2f>& contour, float threshold){
+	std::vector<cv::Point2f> CurveRightAngleSimplification::contour_rectify(std::vector<cv::Point2f>& contour, float threshold, float epsilon){
 
 		// assume it's axis-aligned contour
 		std::vector<cv::Point2f> results;
@@ -1302,8 +1305,53 @@ namespace simp {
 				// do nothing
 			}
 		}
-		for (int i = 0; i < contour.size(); i++)
-			results[i] = contour[i];
+		util::approxPolyDP(cv::Mat(contour), results, epsilon, true);
+		/*for (int i = 0; i < contour.size(); i++)
+			results[i] = contour[i];*/
+		return results;
+	}
+
+	std::vector<cv::Point2f> CurveRightAngleSimplification::contour_rectify_no_curve(std::vector<cv::Point2f>& contour, float threshold, float epsilon){
+		// assume it's axis-aligned contour
+		std::vector<cv::Point2f> results;
+		// type: 0 regular type, 1 horizontal type, 2 vertical type
+		results.resize(contour.size());
+		for (int i = 0; i < contour.size(); i++){
+			int tail = i;
+			int head = (i + 1) % contour.size();
+			int head_next = (i + 2) % contour.size();
+			cv::Point2d vec1(contour[head].x - contour[tail].x, contour[head].y - contour[tail].y);
+			cv::Point2d vec2(1, 0);
+			cv::Point2d vec3(0, 1);
+			float angle = compute_abs_angle(vec1, vec2);
+			int type = 0;
+			float angle_1 = std::min(angle, abs(angle - 180));
+			float angle_2 = abs(angle - 90);
+			float angle_3 = std::min(abs(angle - 45), abs(angle - 135));
+
+			if (angle_1 < angle_2 && angle_1 < angle_3)
+				type = 1;
+			else if (angle_2 < angle_1 && angle_2 < angle_3)
+				type = 2;
+			else
+				type = 0;
+
+			if (type == 1){
+				//contour[head].x = contour[tail].x + dot;
+				contour[head].y = contour[tail].y;
+			}
+			else if (type == 2){
+				contour[head].x = contour[tail].x;
+				//contour[head].y = contour[tail].y + dot;
+			}
+			else{
+				// do nothing
+			}
+		}
+		util::approxPolyDP(cv::Mat(contour), results, epsilon, true);
+		/*for (int i = 0; i < contour.size(); i++)
+		results[i] = contour[i];*/
+
 		return results;
 	}
 

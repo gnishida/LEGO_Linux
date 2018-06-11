@@ -156,15 +156,18 @@ namespace util {
 	bool isClockwise(const std::vector<cv::Point2f>& polygon);
 	void clockwise(std::vector<cv::Point2f>& polygon);
 	void counterClockwise(std::vector<cv::Point2f>& polygon);
+	bool isSimple(const Polygon& polygon);
 	bool isSimple(const Ring& points);
 	bool isSimple(const std::vector<cv::Point>& points);
 	void transform(std::vector<cv::Point2f>& polygon, const cv::Mat_<float>& m);
 	std::vector<cv::Point> removeRedundantPoint(const std::vector<cv::Point>& polygon);
-	std::vector<cv::Point2f> removeRedundantPoint(const std::vector<cv::Point2f>& polygon);
+	Ring removeRedundantPoint(const Ring& polygon);
+	//std::vector<cv::Point2f> removeRedundantPoint(const std::vector<cv::Point2f>& polygon);
 	Ring resolveSelfIntersection(const Ring& ring);
 
 	cv::Rect boundingBox(const std::vector<cv::Point>& polygon);
 	cv::Rect boundingBox(const std::vector<cv::Point2f>& polygon);
+	cv::Rect calculateOBB(const std::vector<cv::Point2f>& polygon, cv::Mat_<float>& trans_mat);
 	bool withinPolygon(const cv::Point2f& pt, const Polygon& polygon);
 	bool withinPolygon(const cv::Point2f& pt, const Ring& ring);
 	bool withinPolygon(const Ring& inside_ring, const Ring& outside_ring);
@@ -180,10 +183,16 @@ namespace util {
 	void findContour(const cv::Mat_<uchar>& img, std::vector<cv::Point>& contour);
 	void createImageFromContour(int width, int height, const std::vector<cv::Point>& contour, const cv::Point& offset, cv::Mat_<uchar>& result, bool erode = true);
 	void createImageFromPolygon(int width, int height, const Polygon& polygon, const cv::Point& offset, cv::Mat_<uchar>& result);
+	std::vector<util::Polygon> intersection(const util::Polygon& polygon1, const util::Polygon& polygon2);
 
 	void approxPolyDP(const std::vector<cv::Point2f>& input_polygon, std::vector<cv::Point2f>& output_polygon, double epsilon, bool closed);
 
-	void snapPolygon(const std::vector<cv::Point2f>& ref_polygon, std::vector<cv::Point2f>& polygon, float snap_vertex_threshold, float snap_edge_threshold);
+	void snapPolygon(const std::vector<util::Polygon>& ref_polygons, util::Polygon& polygon, float snapping_threshold);
+	void snapPolygon(const std::vector<util::Polygon>& ref_polygons, std::vector<cv::Point2f>& polygon, float snapping_threshold);
+	bool snapEdge(const cv::Point2f& p1, const cv::Point2f& p2, std::vector<cv::Point2f>& polygon, int i, int i2);
+	void snapPolygon2(const std::vector<util::Polygon>& ref_polygons, util::Polygon& polygon, float snapping_threshold);
+	void snapPolygon2(const std::vector<util::Polygon>& ref_polygons, std::vector<cv::Point2f>& polygon, float snapping_threshold);
+	bool snapEdge2(const cv::Point2f& p1, const cv::Point2f& p2, std::vector<cv::Point2f>& polygon, int i, int i2);
 	float length(const cv::Point2f& pt);
 	float length(const cv::Point3f& pt);
 	float length(const cv::Point2f& p1, const cv::Point2f& p2);
@@ -191,7 +200,9 @@ namespace util {
 	float crossProduct(const cv::Point2f& v1, const cv::Point2f& v2);
 	cv::Point3f crossProduct(const cv::Point3f& v1, const cv::Point3f& v2);
 	float closestPoint(const cv::Point2f& a, const cv::Point2f& b, const cv::Point2f& c, bool segmentOnly, cv::Point2f& pt);
-
+	float distance(const cv::Point2f& a, const cv::Point2f& b, const cv::Point2f& c, bool segmentOnly);
+	bool segmentSegmentIntersection(const cv::Point2f& a, const cv::Point2f& b, const cv::Point2f& c, const cv::Point2f& d, double *tab, double *tcd, bool segmentOnly, cv::Point2f& intPoint);
+	bool isTangent(const cv::Point2f& a, const cv::Point2f& b, const cv::Point2f& c, const cv::Point2f& d);
 	// tessellation
 	std::vector<std::vector<cv::Point2f>> tessellate(const Ring& points);
 	std::vector<std::vector<cv::Point2f>> tessellate(const Ring& points, const std::vector<Ring>& holes);
